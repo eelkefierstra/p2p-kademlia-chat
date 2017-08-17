@@ -8,6 +8,7 @@ setup(
         name="p2pchat-client",
         description="The client for p2pchat",
         url="https://github.com/eelkefierstra/p2p-kademlia-chat",
+        license="MIT",
         packages=find_packages(),
         install_requires=required
 )
