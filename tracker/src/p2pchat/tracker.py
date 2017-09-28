@@ -4,26 +4,34 @@
 The tracker server
 """
 
-import socket
+from twisted.internet.protocol import ServerFactory, Protocol
 
-class Tracker:
+class TrackerProtocol(Protocol):
     
-    def __init__(self,bindaddr):
-        self.bindaddr = bindaddr
-        self.clients = []
+    def connectionMade(self):
+        self.transport.write(self.factory.hellomsg)
+        self.transport.loseConnection()
+
+class TrackerFactory(ServerFactory):
+    
+    protocol = TrackerProtocol
+
+    def __init__(self, hellomsg):
+        self.hellomsg = hellomsg
+
+class Tracker: 
+
+    def __init__(self, iface, port):
+        self.interface = iface
+        self.port = port
 
     def start(self):
-        self.acceptconnections()
+        hellomsg = "Hello World!".encode('utf-8')
+        factory = TrackerFactory(hellomsg)
+        from twisted.internet import reactor
 
-    def stop(self):
-        self.serversock.close()
+        port = reactor.listenTCP(self.port, factory, interface=self.interface)
 
-    def acceptconnections(self):
-        self.serversock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.serversock.bind(self.bindaddr)
-        self.serversock.listen(10)
-        while True:
-            clientconn, addr = self.serversock.accept()
-            print("Started connection with {}".format(addr))
-            self.clients.append(clientconn)
-            clientconn.send(b"Hello from server")
+        reactor.run()
+
+
