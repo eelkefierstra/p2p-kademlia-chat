@@ -5,19 +5,73 @@ The tracker server
 """
 
 from twisted.internet.protocol import ServerFactory, Protocol
+import json
+import uuid
 
 class TrackerProtocol(Protocol):
+
+    def create_chat(self):
+        # Generate a chat
+        # Generate chat GUID
+        #TODO create the chat in the factory?
+        chatuuid = uuid.uuid4()
+        chatresponse_json = {
+            "action" : "createchat",
+            "chatuuid" : str(chatuuid)
+        }
+        chatresponse = json.dumps(chatresponse_json)
+
+        return chatresponse
+
+    """
+    Get the messages from fromtime till tilltime
+    """
+    def get_messages(self, chatguid):
+        #TODO Actually get the messages
+        #TODO 0 -> from time
+        chatmessages_json = {
+            "action" : "getmessages",
+            "fromtime" : 0,
+            "tilltime" : time.time(),
+            "messages" : 
+            [
+                {
+                    "time" : 4,
+                    "hash" : hashlib.sha256(b"foo").hexdigest()
+                },
+                {
+                    "time" : 4,
+                    "hash" : hashlib.sha256(b"bar").hexdigest()
+                }
+            ]
+        }
+
+        chatmessages = json.dumps(chatmessages_json)
+        return chatmessages
     
-    def connectionMade(self):
-        self.transport.write(self.factory.hellomsg)
-        self.transport.loseConnection()
+    """
+    Not sure when we received the full data, so maybe use a delimiter or
+    send the length in the request.
+    """
+    def dataReceived(self, data):
+        json_obj = json.loads(data)
+        action = json_obj["action"]
+        if action  == "createchat":
+            print("create a chat")
+            response = create_chat()
+        elif action == "getmessages":
+            print("Send some messages")
+            response = get_messages(json_obj)
+            #print("give some messages")
+        self.transport.write(response)
+
 
 class TrackerFactory(ServerFactory):
     
     protocol = TrackerProtocol
 
-    def __init__(self, hellomsg):
-        self.hellomsg = hellomsg
+    #def __init__(self):
+    #    self.hellomsg = hellomsg
 
 class Tracker: 
 
@@ -26,12 +80,10 @@ class Tracker:
         self.port = port
 
     def start(self):
-        hellomsg = "Hello World!".encode('utf-8')
-        factory = TrackerFactory(hellomsg)
+        factory = TrackerFactory()
         from twisted.internet import reactor
 
         port = reactor.listenTCP(self.port, factory, interface=self.interface)
-
         reactor.run()
 
 

@@ -4,12 +4,10 @@ import optparse
 import p2pchat.tracker
 
 def parse_args():
-    usage = """usage: %prog [options]
+    usage = """Usage: %prog [options]
 
-This is the Fast Poetry Server, Twisted edition.
-Run it like this:
+This is the tracker server for the p2p kademlia chat protocol.
 
-  python main.py
 """
 
     parser = optparse.OptionParser(usage)
