@@ -5,32 +5,33 @@ The p2p tracker client
 """
 
 from twisted.internet.protocol import Protocol, ClientFactory
+from twisted.internet import reactor
+
 
 class TrackerClientProtocol(Protocol):
 
-
     def parse_new_chat(self, chatJSON):
-        chatuuid = chatJSON["chatuuid"] 
-        #TODO do something with this new chatuuid
+        chatuuid = chatJSON["chatuuid"]
+        # TODO do something with this new chatuuid
         print("[*] Created new chat with uuid: {}".format(chatuuid))
 
     def parse_messages(self, messagesJSON):
-        #TODO if fromtime >= lastmsg_time, we missed some messages.
+        # TODO if fromtime >= lastmsg_time, we missed some messages.
         # get the messages from lastmsg_time till fromtime also
         fromtime = messagesJSON["fromtime"]
-        #TODO update the newest chat message time
+        # TODO update the newest chat message time
         tilltime = messagesJSON["tilltime "]
         print("[*] Got a new message, fromtime: {}, tilltime: {}".format(fromtime,tilltime))
-    
+
     def dataReceived(self, data):
         dataJSON = json.loads(data)
         action = dataJSON["action"]
-        if action ==  "createchat":
+        if action == "createchat":
             # Created new chat
-            parse_new_chat(dataJSON)
+            self.parse_new_chat(dataJSON)
         elif action == "getmessages":
             # New message locations arrived
-            parse_messages(dataJSON)
+            self.parse_messages(dataJSON)
 
 
 class TrackerClientFactory(ClientFactory):
@@ -47,8 +48,6 @@ class TrackerClientFactory(ClientFactory):
     def clientConnectionLost(self, connector, reason):
         print("[*] Connection lost: {}".format(reason))
 
-        
-
 
 class TrackerClient:
 
@@ -58,6 +57,4 @@ class TrackerClient:
 
     def start(self):
         factory = TrackerClientFactory()
-        from twisted.internet import reactor
         reactor.connectTCP(host, port, factory)
-        reactor.run()
