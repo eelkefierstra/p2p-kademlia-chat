@@ -35,12 +35,13 @@ def main():
     gui.master.title('Independed chat')
     tksupport.install(root)
 
+    # TODO: remove testcode before final version
     for i in range(15):
         gui.addChat('chat'+str(i))
 
     trackerclient = p2pchat.trackerclient.TrackerClient(options.host, options.port)
     # TODO: get bootstrapaddresses
-    p2p = p2pchat.p2pConnection.p2pConnection([options.host])
+    p2p = p2pchat.p2pConnection.p2pConnection(options.host)
     p2p.send('Test message to test p2p network.')
 
     reactor.run()

@@ -5,22 +5,27 @@ The p2p connection frontend
 """
 
 from kademlia.network import Server
+import os
 import hashlib
 
 
 class p2pConnection:
 
-    def __init__(self, bootstrapAdresses):
-        self.server = Server()
-        self.server.listen(8468)  # Dynamic port range: 49152-65535
+    def __init__(self, bootstrapAdres):
 
-        self.server.bootstrap(bootstrapAdresses).addErrback(None)  # TODO: handle error in bootstrap
+        if os.path.isfile('cache.tmp'):
+            self.server = Server.loadState(self, 'cache.tmp')
+        else:
+            self.server = Server()
+            self.server.listen(8468)  # Dynamic port range: 49152-65535
+            self.server.bootstrap([(bootstrapAdres, 8468)])
+        self.server.saveStateRegularly('cache.tmp', 10)
 
     def send(self, message):
         m = hashlib.sha256()
-        m.update(message.to_bytes())
+        m.update(str.encode(message))
         key = m.hexdigest()
-        self.server.set(key, message).addErrback(sendFailed)  # TODO: handle error in setting message
+        self.server.set(key, message).addErrback(self.sendFailed)  # TODO: handle error in setting message
 
     def sendFailed(self, err):
         # Auto resend to network or ask user to resend?
