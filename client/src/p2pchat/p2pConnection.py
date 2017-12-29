@@ -14,7 +14,7 @@ class p2pConnection:
     def __init__(self, bootstrapAdres):
 
         if os.path.isfile('cache.tmp'):
-            self.server = Server.loadState(self, 'cache.tmp')
+            self.server = Server.loadState('cache.tmp')
         else:
             self.server = Server()
             self.server.listen(8468)  # Dynamic port range: 49152-65535
