@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import optparse
+import argparse
 import p2pchat.trackerclient
 import p2pchat.application
 from Tkinter import *
@@ -8,26 +8,26 @@ from twisted.internet import tksupport, reactor
 
 
 def parse_args():
-    usage = """Usage: %prog [options]
-
-This is the client for the p2p kademlia chat protocol.
+    description = """
+This is the client for the p2p kademlia chat protoco=description
 """
 
-    parser = optparse.OptionParser(usage)
+    parser = argparse.ArgumentParser(description=description)
 
     helpPort = "The port to connect to. Default to 1337."
-    parser.add_option('--port', type='int', help=helpPort, default=1337)
+    parser.add_argument('--port', type=int, help=helpPort, default=1337)
 
     helpHost = "The host to connect to."
-    parser.add_option('--host', help=helpHost, default='127.0.0.1')
+    parser.add_argument('--host', help=helpHost, default='127.0.0.1')
 
-    options, args = parser.parse_args()
+    args = parser.parse_args()
+    print(args)
 
-    return options
+    return args
 
 
 def main():
-    options = parse_args()
+    args = parse_args()
 
     root = Tk()
     gui = p2pchat.application.Application(root)
@@ -37,7 +37,7 @@ def main():
     for i in range(15):
         gui.addChat('chat'+str(i))
 
-    trackerclient = p2pchat.trackerclient.TrackerClient(options.host, options.port)
+    trackerclient = p2pchat.trackerclient.TrackerClient(args.host, args.port)
 
     reactor.run()
 
