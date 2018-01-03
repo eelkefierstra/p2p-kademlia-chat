@@ -38,6 +38,7 @@ pip-delete-this-directory.txt
 # Unit test / coverage reports
 htmlcov/
 .tox/
+_trial_temp/
 .coverage
 .coverage.*
 .cache
@@ -99,3 +100,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Vim
+*.swp
+
+# SQLite
+*.db
