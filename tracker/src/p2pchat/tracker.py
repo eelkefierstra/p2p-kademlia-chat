@@ -91,10 +91,9 @@ class Tracker:
 
     def start(self):
         factory = TrackerFactory(self.db)
-        # TODO load these values from a config file?
 
         from twisted.internet import reactor
-
+        # TODO load these values from a config file?
         port = reactor.listenTCP(self.port, factory, interface=self.interface)
         reactor.run()
 
