@@ -11,8 +11,6 @@ import uuid
 class TrackerProtocol(Protocol):
 
     def create_chat(self):
-        # Generate a chat
-        # Generate chat GUID
         #TODO create the chat in the factory?
         chatuuid = uuid.uuid4()
         chatresponse_json = {
@@ -26,7 +24,7 @@ class TrackerProtocol(Protocol):
     """
     Get the messages from fromtime till tilltime
     """
-    def get_messages(self, chatguid):
+    def get_messages(self, chatuuid):
         #TODO Actually get the messages
         #TODO 0 -> from time
         chatmessages_json = {
@@ -75,12 +73,15 @@ class TrackerFactory(ServerFactory):
 
 class Tracker: 
 
-    def __init__(self, iface, port):
+    def __init__(self, iface, port, db):
         self.interface = iface
         self.port = port
+        self.db = db
 
     def start(self):
         factory = TrackerFactory()
+        # TODO load these values from a config file?
+
         from twisted.internet import reactor
 
         port = reactor.listenTCP(self.port, factory, interface=self.interface)
