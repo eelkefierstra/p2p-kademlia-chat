@@ -4,15 +4,18 @@
 The tracker server
 """
 
-from twisted.internet.protocol import ServerFactory, Protocol
 import json
 import uuid
+from twisted.internet.protocol import ServerFactory, Protocol
+from p2pchat.database import P2PChatDB
 
 class TrackerProtocol(Protocol):
 
     def create_chat(self):
         #TODO create the chat in the factory?
+        print("Creating chat...")
         chatuuid = uuid.uuid4()
+        self.db.create_chat(chatuuid)
         chatresponse_json = {
             "action" : "createchat",
             "chatuuid" : str(chatuuid)
@@ -68,8 +71,11 @@ class TrackerFactory(ServerFactory):
     
     protocol = TrackerProtocol
 
-    #def __init__(self):
-    #    self.hellomsg = hellomsg
+    """
+    db: instance of P2PChatDB
+    """
+    def __init__(self, db):
+        self.db = db
 
 class Tracker: 
 
@@ -79,7 +85,7 @@ class Tracker:
         self.db = db
 
     def start(self):
-        factory = TrackerFactory()
+        factory = TrackerFactory(self.db)
         # TODO load these values from a config file?
 
         from twisted.internet import reactor
