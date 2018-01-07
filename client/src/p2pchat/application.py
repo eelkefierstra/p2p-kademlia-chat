@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''
 @author: Eelke
 The GUI for the chat application
