@@ -30,7 +30,6 @@ class TestDB(object):
     def create_chat(self, chatuuid):
         self.p2pchat["groupchats"][chatuuid] = chatuuid
 
-
 class CreateChatTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -51,4 +50,3 @@ class CreateChatTestCase(unittest.TestCase):
         }
         createchat_str = json.dumps(createchat_json)
         self.proto.dataReceived(createchat_str)
-
