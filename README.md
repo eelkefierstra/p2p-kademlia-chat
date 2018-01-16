@@ -5,10 +5,9 @@ Based on the kademlia protocol to exchange messages between clients and a tracke
 Have fun and don't break anything ;)
 
 # Client
-## Installing the client
-Check [Installing the client](client/docs/README.md)
-## Using the client
+## Documentation
+Check [Client documentation](client/docs/README.md) for usage and installation
 
 # Tracker
-## Setting up the tracker
-Check [Setting up the tracker](tracker/docs/README.md)
+## Documentation
+Check [Tracker documentation](tracker/docs/README.md) for usage and installation
