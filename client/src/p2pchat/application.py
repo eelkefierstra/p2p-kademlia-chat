@@ -9,8 +9,9 @@ from twisted.internet.task import react
 import random
 
 
-class Application(tk.Frame):
+class Application(tk.Frame, uiInterface):
     def __init__(self, master=None):
+        self.uiInterface = uiInterface
         tk.Frame.__init__(self, master)
         top = self.winfo_toplevel()
         top.rowconfigure(0, weight=1)
@@ -22,6 +23,8 @@ class Application(tk.Frame):
         self.createWidgets()
 
     def createWidgets(self):
+        # Create Menubar
+        self.createMenubar()
         # Build the chat listing
         self.chatList = tk.Frame(self)
         self.chatList.grid(row=0, column=0)
@@ -39,6 +42,19 @@ class Application(tk.Frame):
 
         self.quitButton = tk.Button(self, text='Quit', command=reactor.stop, bg='#f22')
         self.quitButton.grid(row=1, column=0, columnspan=2, sticky=tk.N+tk.S+tk.E+tk.W)
+
+    def createMenubar(self):
+        self.menubar = tk.Menu(self)
+
+        chatmenu = tk.Menu(self.menubar, tearoff=0)
+        chatmenu.add_command(label='Create chat', command=self.createChatPopup)
+        return
+    
+    def createChatPopup(self):
+        # TODO: create popup
+        # TODO: ask for chatname
+        # TODO: create chat via uiInterface
+        return
 
     def configureChatmessageList(self):
         self.chatView = tk.Frame(self)

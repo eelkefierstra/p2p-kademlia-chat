@@ -26,6 +26,7 @@ class p2pConnection:
         m.update(str.encode(message))
         key = m.hexdigest()
         self.server.set(key, message).addErrback(self.sendFailed)  # TODO: handle error in setting message
+        return key
 
     def sendFailed(self, err):
         # Auto resend to network or ask user to resend?

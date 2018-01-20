@@ -3,6 +3,7 @@
 import argparse
 import p2pchat.trackerclient
 import p2pchat.p2pConnection
+import p2pchat.uiInterface
 import p2pchat.application
 from Tkinter import *
 from twisted.internet import tksupport, reactor
@@ -30,8 +31,14 @@ This is the client for the p2p kademlia chat protoco=description
 def main():
     args = parse_args()
 
+    trackerclient = p2pchat.trackerclient.TrackerClient(args.host, args.port)
+    # TODO: get bootstrapaddresses
+    p2p = p2pchat.p2pConnection.p2pConnection(args.host)
+
+    uiinterface = p2pchat.uiInterface(p2p, trackerclient)
+
     root = Tk()
-    gui = p2pchat.application.Application(root)
+    gui = p2pchat.application.Application(root, uiinterface)
     gui.master.title('Independed chat')
     tksupport.install(root)
 
@@ -39,10 +46,6 @@ def main():
     for i in range(15):
         gui.addChat('chat'+str(i))
 
-    trackerclient = p2pchat.trackerclient.TrackerClient(args.host, args.port)
-    # TODO: get bootstrapaddresses
-    p2p = p2pchat.p2pConnection.p2pConnection(options.host)
-    # p2p.send('Test message to test p2p network.')
 
     reactor.run()
 
