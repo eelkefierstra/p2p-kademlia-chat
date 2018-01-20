@@ -1,32 +1,30 @@
 #!/usr/bin/env python3
 
-import optparse
-import p2pchat.p2pConnection
+import argparse
 import p2pchat.tracker
+import p2pchat.p2pConnection
 
 
 def parse_args():
-    usage = """Usage: %prog [options]
-
+    description = """
 This is the tracker server for the p2p kademlia chat protocol.
 
 """
 
-    parser = optparse.OptionParser(usage)
+    parser = argparse.ArgumentParser(description=description)
+    help = "The port to listen on. Defaults to 1337."
+    parser.add_argument('--port', type=int, help=help, default=1337)
 
-    helpPort = "The port to listen on. Default to 1337."
-    parser.add_option('--port', type='int', help=helpPort, default=1337)
+    help = "The interface to listen on. Default is localhost."
+    parser.add_argument('--iface', help=help, default='localhost')
 
-    helpIface = "The interface to listen on. Default is localhost."
-    parser.add_option('--iface', help=helpIface, default='localhost')
+    args = parser.parse_args()
 
-    options, args = parser.parse_args()
-
-    return options
+    return args
 
 
 if __name__ == "__main__":
-    options = parse_args()
+    args = parse_args()
+    tracker = p2pchat.tracker.Tracker(args.iface, args.port)
     p2pServer = p2pchat.p2pConnection.p2pConnection()
-    tracker = p2pchat.tracker.Tracker(options.iface, options.port)
     tracker.start()

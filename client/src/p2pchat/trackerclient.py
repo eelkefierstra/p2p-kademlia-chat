@@ -6,6 +6,7 @@ The p2p tracker client
 
 from twisted.internet.protocol import Protocol, ClientFactory
 from twisted.internet import reactor
+import json
 
 
 class TrackerClientProtocol(Protocol):
