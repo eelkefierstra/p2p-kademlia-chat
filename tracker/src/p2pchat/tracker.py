@@ -9,16 +9,20 @@ import uuid
 from twisted.internet.protocol import ServerFactory, Protocol
 from p2pchat.database import P2PChatDB
 
+
 class TrackerProtocol(Protocol):
 
+    def __init__(self, db):
+        self.db = db
+
     def create_chat(self):
-        #TODO create the chat in the factory?
+        # TODO create the chat in the factory?
         print("Creating chat...")
         chatuuid = uuid.uuid4()
         self.db.create_chat(chatuuid)
         chatresponse_json = {
-            "action" : "createchat",
-            "chatuuid" : str(chatuuid)
+            "action": "createchat",
+            "chatuuid": str(chatuuid)
         }
         chatresponse = json.dumps(chatresponse_json)
 
@@ -28,28 +32,28 @@ class TrackerProtocol(Protocol):
     Get the messages from fromtime till tilltime
     """
     def get_messages(self, chatuuid):
-        #TODO Actually get the messages
-        #TODO 0 -> from time
+        # TODO Actually get the messages
+        # TODO 0 -> from time
         chatmessages_json = {
-            "action" : "getmessages",
-            "fromtime" : 0,
-            "tilltime" : time.time(),
-            "messages" : 
+            "action": "getmessages",
+            "fromtime": 0,
+            "tilltime": time.time(),
+            "messages":
             [
                 {
-                    "time" : 4,
-                    "hash" : hashlib.sha256(b"foo").hexdigest()
+                    "time": 4,
+                    "hash": hashlib.sha256(b"foo").hexdigest()
                 },
                 {
-                    "time" : 4,
-                    "hash" : hashlib.sha256(b"bar").hexdigest()
+                    "time": 4,
+                    "hash": hashlib.sha256(b"bar").hexdigest()
                 }
             ]
         }
 
         chatmessages = json.dumps(chatmessages_json)
         return chatmessages
-    
+
     """
     Not sure when we received the full data, so maybe use a delimiter or
     send the length in the request.
@@ -57,19 +61,17 @@ class TrackerProtocol(Protocol):
     def dataReceived(self, data):
         json_obj = json.loads(data)
         action = json_obj["action"]
-        if action  == "createchat":
+        if action == "createchat":
             print("create a chat")
-            response = create_chat()
+            response = self.create_chat()
         elif action == "getmessages":
             print("Send some messages")
-            response = get_messages(json_obj)
-            #print("give some messages")
-        self.transport.write(response)
+            response = self.get_messages(json_obj)
+            # print("give some messages")
+        self.transport.write(response.encode('utf-8'))
 
 
 class TrackerFactory(ServerFactory):
-    
-    protocol = TrackerProtocol
 
     """
     db: instance of P2PChatDB
@@ -77,7 +79,11 @@ class TrackerFactory(ServerFactory):
     def __init__(self, db):
         self.db = db
 
-class Tracker: 
+    def buildProtocol(self):
+        return TrackerProtocol(self.db)
+
+
+class Tracker:
 
     def __init__(self, iface, port, db):
         self.interface = iface
@@ -92,5 +98,3 @@ class Tracker:
 
         port = reactor.listenTCP(self.port, factory, interface=self.interface)
         reactor.run()
-
-
