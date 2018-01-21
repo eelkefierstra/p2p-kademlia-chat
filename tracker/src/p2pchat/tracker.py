@@ -4,17 +4,18 @@
 The tracker server
 """
 
-from twisted.internet.protocol import ServerFactory, Protocol
 import json
 import uuid
+from twisted.internet.protocol import ServerFactory, Protocol
+from p2pchat.database import P2PChatDB
 
 class TrackerProtocol(Protocol):
 
     def create_chat(self):
-        # Generate a chat
-        # Generate chat GUID
         #TODO create the chat in the factory?
+        print("Creating chat...")
         chatuuid = uuid.uuid4()
+        self.db.create_chat(chatuuid)
         chatresponse_json = {
             "action" : "createchat",
             "chatuuid" : str(chatuuid)
@@ -26,7 +27,7 @@ class TrackerProtocol(Protocol):
     """
     Get the messages from fromtime till tilltime
     """
-    def get_messages(self, chatguid):
+    def get_messages(self, chatuuid):
         #TODO Actually get the messages
         #TODO 0 -> from time
         chatmessages_json = {
@@ -70,17 +71,23 @@ class TrackerFactory(ServerFactory):
     
     protocol = TrackerProtocol
 
-    #def __init__(self):
-    #    self.hellomsg = hellomsg
+    """
+    db: instance of P2PChatDB
+    """
+    def __init__(self, db):
+        self.db = db
 
 class Tracker: 
 
-    def __init__(self, iface, port):
+    def __init__(self, iface, port, db):
         self.interface = iface
         self.port = port
+        self.db = db
 
     def start(self):
-        factory = TrackerFactory()
+        factory = TrackerFactory(self.db)
+        # TODO load these values from a config file?
+
         from twisted.internet import reactor
 
         port = reactor.listenTCP(self.port, factory, interface=self.interface)

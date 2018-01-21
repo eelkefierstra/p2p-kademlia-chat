@@ -11,6 +11,14 @@ import json
 
 class TrackerClientProtocol(Protocol):
 
+    def create_chat(self):
+        createchat_json = {
+                "action"  : "createchat"
+        }
+        createchat_str = json.dumps(createchat_json)
+        self.transport.write(createchat_str.encode('utf-8'))
+        
+
     def parse_new_chat(self, chatJSON):
         chatuuid = chatJSON["chatuuid"]
         # TODO do something with this new chatuuid
