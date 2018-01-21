@@ -3,6 +3,7 @@
 from OpenSSL import SSL
 from txmongo.connection import ConnectionPool
 from twisted.internet import defer, reactor, ssl
+from time import datetime
 
 
 class P2PChatDB(object):
@@ -24,4 +25,18 @@ class P2PChatDB(object):
 
     @defer.inlineCallbacks
     def create_chat(self, chatuuid):
-        self.db.p2pchat.groupchats.insert({"uuid" : chatuuid})
+        self.db.p2pchat.groupchats.insert({"uuid" : chatuuid, "messages": []})
+
+    @defer.inlineCallbacks
+    def store_message(self, chatuuid, msghash):
+        self.db.p2pchat.groupchats.update(
+                {"uuid" : chatuuid},
+                {"$push": 
+                    {
+                        "messages": {
+                            "hash": msghash, 
+                            "time": datetime.now()
+                        }
+                    }
+                }
+            )

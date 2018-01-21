@@ -15,8 +15,7 @@ class TrackerProtocol(Protocol):
         self.db = db
 
     def create_chat(self):
-        #TODO create the chat in the factory?
-        print("Creating chat...")
+        #TODO create unit test to see if the chat is created
         chatuuid = uuid.uuid4()
         self.db.create_chat(chatuuid)
         chatresponse_json = {
@@ -26,6 +25,21 @@ class TrackerProtocol(Protocol):
         chatresponse = json.dumps(chatresponse_json)
 
         return chatresponse
+
+    def send_message(self, msg_json):
+        chatuuid = msg_json["chatuuid"]
+        msg_hash = msg_json["hash"]
+
+        self.db.store_message(chatuuid, msg_hash)
+
+        sendmsg_json = {
+            "action" : "sendmessage",
+            "chatuuid" : chatuuid,
+            "msg_hash" : msg_hash
+        }
+
+        sendmsg_response = json.dumps(sendmsg_json)
+        return sendmsg_response
 
     """
     Get the messages from fromtime till tilltime
@@ -61,12 +75,11 @@ class TrackerProtocol(Protocol):
         json_obj = json.loads(data)
         action = json_obj["action"]
         if action  == "createchat":
-            print("create a chat")
             response = self.create_chat()
+        elif action == "sendmessage":
+            response = self.send_message(json_obj)
         elif action == "getmessages":
-            print("Send some messages")
             response = self.get_messages(json_obj)
-            #print("give some messages")
         self.transport.write(response.encode('utf-8'))
 
 
