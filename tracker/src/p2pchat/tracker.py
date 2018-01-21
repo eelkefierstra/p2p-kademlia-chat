@@ -80,8 +80,6 @@ class TrackerProtocol(Protocol):
             response = self.send_message(json_obj)
         elif action == "getmessages":
             response = self.get_messages(json_obj)
-        elif action == "getmessages":
-            response = self.get_messages(json_obj)
 
         self.transport.write(response.encode('utf-8'))
 
