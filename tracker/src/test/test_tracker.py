@@ -50,3 +50,4 @@ class CreateChatTestCase(unittest.TestCase):
         }
         createchat_str = json.dumps(createchat_json)
         self.proto.dataReceived(createchat_str)
+
