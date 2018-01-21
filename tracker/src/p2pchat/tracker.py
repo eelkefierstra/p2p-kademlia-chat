@@ -11,6 +11,9 @@ from p2pchat.database import P2PChatDB
 
 class TrackerProtocol(Protocol):
 
+    def __init__(self, db):
+        self.db = db
+
     def create_chat(self):
         #TODO create the chat in the factory?
         print("Creating chat...")
@@ -59,23 +62,25 @@ class TrackerProtocol(Protocol):
         action = json_obj["action"]
         if action  == "createchat":
             print("create a chat")
-            response = create_chat()
+            response = self.create_chat()
         elif action == "getmessages":
             print("Send some messages")
-            response = get_messages(json_obj)
+            response = self.get_messages(json_obj)
             #print("give some messages")
-        self.transport.write(response)
+        self.transport.write(response.encode('utf-8'))
 
 
 class TrackerFactory(ServerFactory):
     
-    protocol = TrackerProtocol
 
     """
     db: instance of P2PChatDB
     """
     def __init__(self, db):
         self.db = db
+
+    def buildProtocol(self):
+        return TrackerProtocol(self.db)
 
 class Tracker: 
 
