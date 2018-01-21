@@ -10,8 +10,8 @@ from twisted.internet.task import react
 import random
 
 
-class Application(tk.Frame, uiInterface):
-    def __init__(self, master=None):
+class Application(tk.Frame):
+    def __init__(self, master, uiInterface):
         self.uiInterface = uiInterface
         tk.Frame.__init__(self, master)
         top = self.winfo_toplevel()
@@ -34,6 +34,8 @@ class Application(tk.Frame, uiInterface):
         self.chatScroll.grid(row=0, column=1, sticky=tk.N+tk.S)
         self.chatListBox = tk.Listbox(self.chatList, yscrollcommand=self.chatScroll.set)
         self.chatListBox.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
+        self.chatListBox.activate(0)
+        self.changeChat() # Initiate program on first chat
         self.chatScroll['command'] = self.chatListBox.yview
         self.chatListButton = tk.Button(self.chatList, text='Select chat', command=self.changeChat)
         self.chatListButton.grid(row=1, column=0, columnspan=2, sticky=tk.E+tk.W)
@@ -52,9 +54,15 @@ class Application(tk.Frame, uiInterface):
         return
     
     def createChatPopup(self):
-        # TODO: create popup
-        # TODO: ask for chatname
-        # TODO: create chat via uiInterface
+        createChatText = 'Enter name for new chat:'
+        topLevel = tk.Toplevel()
+        label = tk.Label(topLevel, text=createChatText)
+        label.grid(row=0, column=0)
+        
+        textEntry = tk.Entry(topLevel)
+        textEntry.grid(row=1, column=0)
+        
+        createButton = tk.Button(topLevel, text='Create chat', command= lambda: self.uiInterface.createChat(textEntry.get()))
         return
 
     def configureChatmessageList(self):
@@ -75,7 +83,7 @@ class Application(tk.Frame, uiInterface):
 
         self.chatMessageEntry = tk.Entry(self.chatView)
         self.chatMessageEntry.grid(row=1, column=0, sticky=tk.W+tk.E)
-        self.chatMessageButtonSend = tk.Button(self.chatView, text='Send', command=None)
+        self.chatMessageButtonSend = tk.Button(self.chatView, text='Send', command=lambda: self.uiInterface.sendChatMessage(self.currentChat, self.chatMessageEntry.get()))
         self.chatMessageButtonSend.grid(row=1, column=1)
 
     def addChat(self, chatName):
@@ -85,7 +93,7 @@ class Application(tk.Frame, uiInterface):
         selected = self.chatListBox.curselection()
         if selected == ():
             return
-        chatname = self.chatListBox.get(selected)
+        self.currentChat = self.chatListBox.get(selected)[0]
         # TODO: Get chat
         self.populate()
 

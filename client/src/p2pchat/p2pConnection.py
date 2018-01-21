@@ -30,11 +30,11 @@ class p2pConnection:
 
     def sendFailed(self, err):
         # Auto resend to network or ask user to resend?
-        return None
+        return
 
     def get(self, key):
         message = self.server.get(key).addErrback(None)  # TODO: handle error in getting message
         return message
 
     def quit(self):
-        return None
+        return

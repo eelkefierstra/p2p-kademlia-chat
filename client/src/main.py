@@ -35,7 +35,7 @@ def main():
     # TODO: get bootstrapaddresses
     p2p = p2pchat.p2pConnection.p2pConnection(args.host)
 
-    uiinterface = p2pchat.uiInterface(p2p, trackerclient)
+    uiinterface = p2pchat.uiInterface.uiInterface(p2p, trackerclient)
 
     root = Tk()
     gui = p2pchat.application.Application(root, uiinterface)
