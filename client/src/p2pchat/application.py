@@ -49,10 +49,15 @@ class Application(tk.Frame):
         self.quitButton.grid(row=1, column=0, columnspan=2, sticky=tk.N+tk.S+tk.E+tk.W)
 
     def createMenubar(self):
-        self.menubar = tk.Menu(self)
+        top = self.winfo_toplevel()
+        self.menubar = tk.Menu(top)
 
         chatmenu = tk.Menu(self.menubar, tearoff=0)
         chatmenu.add_command(label='Create chat', command=self.createChatPopup)
+
+        self.menubar.add_cascade(label='Chats', menu=chatmenu)
+        
+        top.config(menu=self.menubar)
         return
     
     def createChatPopup(self):
