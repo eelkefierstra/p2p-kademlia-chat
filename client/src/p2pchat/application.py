@@ -13,6 +13,8 @@ import random
 class Application(tk.Frame):
     def __init__(self, master, uiInterface):
         self.uiInterface = uiInterface
+        self.chatListLabels = []
+        
         tk.Frame.__init__(self, master)
         top = self.winfo_toplevel()
         top.rowconfigure(0, weight=1)
@@ -101,15 +103,21 @@ class Application(tk.Frame):
         '''Put in some fake data'''
         # TODO: get real chat messages to show up
         # TODO: reset frame to show new chat
+        for label in self.chatListLabels:
+            label.destroy()
         random.seed()
         for row in range(random.randint(50, 100)):
             if row % 2 == 0:
                 sender = 'You'
             else:
                 sender = 'Me'
-            tk.Label(self.chatMessageFrame, text=sender).grid(row=row, column=0)
+            chatSenderLabel = tk.Label(self.chatMessageFrame, text=sender)
+            chatSenderLabel.grid(row=row, column=0)
+            self.chatListLabels.append(chatSenderLabel)
             t = "This is message number %s" % row
-            tk.Label(self.chatMessageFrame, text=t).grid(row=row, column=1)
+            chatMessageLabel = tk.Label(self.chatMessageFrame, text=t)
+            chatMessageLabel.grid(row=row, column=1)
+            self.chatListLabels.append(chatMessageLabel)
 
     def onFrameConfigure(self, event):
         '''Reset the scroll region to encompass the inner frame'''

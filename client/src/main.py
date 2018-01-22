@@ -11,7 +11,7 @@ from twisted.internet import tksupport, reactor
 
 def parse_args():
     description = """
-This is the client for the p2p kademlia chat protoco=description
+This is the client for the p2p kademlia chat protocol
 """
 
     parser = argparse.ArgumentParser(description=description)
@@ -32,12 +32,14 @@ def main():
     args = parse_args()
 
     trackerclient = p2pchat.trackerclient.TrackerClient(args.host, args.port)
-    # TODO: get bootstrapaddresses
+    # TODO: get p2p bootstrapaddresses
     p2p = p2pchat.p2pConnection.p2pConnection(args.host)
 
     uiinterface = p2pchat.uiInterface.uiInterface(p2p, trackerclient)
 
     root = Tk()
+    # This fixes the reactor error on closing root window with the 'X' button
+    root.protocol("WM_DELETE_WINDOW", reactor.stop)
     gui = p2pchat.application.Application(root, uiinterface)
     gui.master.title('Independed chat')
     tksupport.install(root)
