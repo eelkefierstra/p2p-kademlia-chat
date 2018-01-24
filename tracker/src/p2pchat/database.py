@@ -3,7 +3,7 @@
 from OpenSSL import SSL
 from txmongo.connection import ConnectionPool
 from twisted.internet import defer, reactor, ssl
-from time import datetime
+import datetime
 
 
 class P2PChatDB(object):
@@ -35,7 +35,7 @@ class P2PChatDB(object):
                     {
                         "messages": {
                             "hash": msghash, 
-                            "time": datetime.now()
+                            "time": time.time()
                         }
                     }
                 }

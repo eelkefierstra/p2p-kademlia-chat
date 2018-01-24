@@ -22,9 +22,7 @@ class TrackerProtocol(Protocol):
             "action" : "createchat",
             "chatuuid" : str(chatuuid)
         }
-        chatresponse = json.dumps(chatresponse_json)
-
-        return chatresponse
+        return chatresponse_json
 
     def send_message(self, msg_json):
         chatuuid = msg_json["chatuuid"]
@@ -38,8 +36,7 @@ class TrackerProtocol(Protocol):
             "msg_hash" : msg_hash
         }
 
-        sendmsg_response = json.dumps(sendmsg_json)
-        return sendmsg_response
+        return sendmsg_json
 
     """
     Get the messages from fromtime till tilltime
@@ -63,9 +60,7 @@ class TrackerProtocol(Protocol):
                 }
             ]
         }
-
-        chatmessages = json.dumps(chatmessages_json)
-        return chatmessages
+        return chatmessages_json
     
     """
     Not sure when we received the full data, so maybe use a delimiter or
@@ -75,12 +70,13 @@ class TrackerProtocol(Protocol):
         json_obj = json.loads(data)
         action = json_obj["action"]
         if action  == "createchat":
-            response = self.create_chat()
+            jsonresponse = self.create_chat()
         elif action == "sendmessage":
-            response = self.send_message(json_obj)
+            jsonresponse = self.send_message(json_obj)
         elif action == "getmessages":
-            response = self.get_messages(json_obj)
+            jsonresponse = self.get_messages(json_obj)
 
+        response = json.dumps(jsonresponse)
         self.transport.write(response.encode('utf-8'))
 
 
