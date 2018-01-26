@@ -17,6 +17,20 @@ class TrackerClientProtocol(Protocol):
         }
         createchat_str = json.dumps(createchat_json)
         self.transport.write(createchat_str.encode('utf-8'))
+
+    def send_message(self, chatuuid, msg_hash):
+        sendmsg_json = {
+            "action" : "sendmessage",
+            "chatuuid" : chatuuid,
+            "msg_hash" : msg_hash
+        }
+        sendmsg_str = json.dumps(sendmsg_json)
+        self.transport.write(sendmsg_str.encode('utf-8'))
+
+    "
+    @param fromtime Receive messages after fromtime (unix timestamp utc)
+    "
+    def get_messages(self, fromtime)
         
 
     def parse_new_chat(self, chatJSON):

@@ -40,3 +40,19 @@ class P2PChatDB(object):
                     }
                 }
             )
+
+    @defer.inlineCallbacks
+    def get_messages(self, chatuuid, fromtime):
+        messages = yield self.db.p2pchat.groupchats.find(
+                    { "uuid" : chatuuid,
+                      "messages" : { 
+                          "$elemMatch" : {
+                                "time" : {
+                                    "$gt": fromtime
+                                }
+                            }
+                        }
+                    }
+        
+                )
+        defer.returnValue(messages)
