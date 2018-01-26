@@ -6,6 +6,10 @@ The tracker server
 
 import json
 import uuid
+import datetime
+import time
+import hashlib
+from twisted.internet import defer
 from twisted.internet.protocol import ServerFactory, Protocol
 from p2pchat.database import P2PChatDB
 
@@ -25,8 +29,9 @@ class TrackerProtocol(Protocol):
         return chatresponse_json
 
     def send_message(self, msg_json):
+        # TODO keyerror
         chatuuid = msg_json["chatuuid"]
-        msg_hash = msg_json["hash"]
+        msg_hash = msg_json["msg_hash"]
 
         self.db.store_message(chatuuid, msg_hash)
 
@@ -38,29 +43,49 @@ class TrackerProtocol(Protocol):
 
         return sendmsg_json
 
+
+
     """
     Get the messages from fromtime till tilltime
     """
-    def get_messages(self, chatuuid):
-        #TODO Actually get the messages
-        #TODO 0 -> from time
-        chatmessages_json = {
-            "action" : "getmessages",
-            "fromtime" : 0,
-            "tilltime" : time.time(),
-            "messages" : 
-            [
-                {
-                    "time" : 4,
-                    "hash" : hashlib.sha256(b"foo").hexdigest()
-                },
-                {
-                    "time" : 4,
-                    "hash" : hashlib.sha256(b"bar").hexdigest()
-                }
-            ]
-        }
-        return chatmessages_json
+    def get_messages(self, msg_request_json):
+        fromtime = msg_request_json["fromtime"]
+        fromtime_date = datetime.datetime.fromtimestamp(fromtime)
+        uuid = msg_request_json["chatuuid"]
+
+        """
+        Callback for writing messages to the tracker client
+        """
+        def write_get_messages(messages):
+            #TODO Actually get the messages
+            chatmessages_json = {
+                "action" : "getmessages",
+                "fromtime" : fromtime,
+                "tilltime" : time.time(),
+                "messages" : 
+                [
+                    {
+                        "time" : 4,
+                        "hash" : hashlib.sha256(b"foo").hexdigest()
+                    },
+                    {
+                        "time" : 4,
+                        "hash" : hashlib.sha256(b"bar").hexdigest()
+                    }
+                ]
+            }
+            self.write_json(chatmessages_json)
+            #TODO actually do something useful with the messages
+            print("got_messages: {}".format(messages))
+
+        d = self.db.get_messages(uuid, fromtime_date)
+        print(type(d))
+        d.addCallback(write_get_messages) 
+
+
+    def write_json(self, json_obj):
+        response = json.dumps(json_obj)
+        self.transport.write(response.encode('utf-8'))
     
     """
     Not sure when we received the full data, so maybe use a delimiter or
@@ -68,16 +93,18 @@ class TrackerProtocol(Protocol):
     """
     def dataReceived(self, data):
         json_obj = json.loads(data)
+        #TODO keyerror
         action = json_obj["action"]
         if action  == "createchat":
             jsonresponse = self.create_chat()
+            self.write_json(jsonresponse)
         elif action == "sendmessage":
             jsonresponse = self.send_message(json_obj)
+            self.write_json(jsonresponse)
         elif action == "getmessages":
+            # TODO async
             jsonresponse = self.get_messages(json_obj)
 
-        response = json.dumps(jsonresponse)
-        self.transport.write(response.encode('utf-8'))
 
 
 class TrackerFactory(ServerFactory):
