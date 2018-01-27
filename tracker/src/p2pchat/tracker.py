@@ -16,17 +16,28 @@ class TrackerProtocol(Protocol):
         self.db = db
 
     def create_chat(self):
-        # TODO create the chat in the factory?
-        print("Creating chat...")
+        # TODO create unit test to see if the chat is created
         chatuuid = uuid.uuid4()
         self.db.create_chat(chatuuid)
         chatresponse_json = {
             "action": "createchat",
             "chatuuid": str(chatuuid)
         }
-        chatresponse = json.dumps(chatresponse_json)
+        return chatresponse_json
 
-        return chatresponse
+    def send_message(self, msg_json):
+        chatuuid = msg_json["chatuuid"]
+        msg_hash = msg_json["hash"]
+
+        self.db.store_message(chatuuid, msg_hash)
+
+        sendmsg_json = {
+            "action": "sendmessage",
+            "chatuuid": chatuuid,
+            "msg_hash": msg_hash
+        }
+
+        return sendmsg_json
 
     """
     Get the messages from fromtime till tilltime
@@ -50,10 +61,7 @@ class TrackerProtocol(Protocol):
                 }
             ]
         }
-
-        chatmessages = json.dumps(chatmessages_json)
-        return chatmessages
-
+        return chatmessages_json
     """
     Not sure when we received the full data, so maybe use a delimiter or
     send the length in the request.
@@ -62,12 +70,13 @@ class TrackerProtocol(Protocol):
         json_obj = json.loads(data)
         action = json_obj["action"]
         if action == "createchat":
-            print("create a chat")
-            response = self.create_chat()
+            jsonresponse = self.create_chat()
+        elif action == "sendmessage":
+            jsonresponse = self.send_message(json_obj)
         elif action == "getmessages":
-            print("Send some messages")
-            response = self.get_messages(json_obj)
-            # print("give some messages")
+            jsonresponse = self.get_messages(json_obj)
+
+        response = json.dumps(jsonresponse)
         self.transport.write(response.encode('utf-8'))
 
 
@@ -92,9 +101,8 @@ class Tracker:
 
     def start(self):
         factory = TrackerFactory(self.db)
-        # TODO load these values from a config file?
 
         from twisted.internet import reactor
-
+        # TODO load these values from a config file?
         port = reactor.listenTCP(self.port, factory, interface=self.interface)
         reactor.run()
