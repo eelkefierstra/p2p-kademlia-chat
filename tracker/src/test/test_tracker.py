@@ -39,6 +39,7 @@ class CreateChatTestCase(unittest.TestCase):
     def test_create_chat(self): 
         # Mock create_chat
         self.create_chat_called = False
+
         @defer.inlineCallbacks
         def fake_create_chat(chatuuid):
             self.create_chat_called = True
@@ -68,67 +69,61 @@ class CreateChatTestCase(unittest.TestCase):
 
 
     #@mock.patch.object(P2PChatDB, 'store_message', autospec=True)
-    #def test_send_message(self, mock_send_message):
-    #    fake_msg_hash = str(hashlib.sha256(b"fake").hexdigest())
-    #    sendmsg_json = {
-    #        "action" : "sendmessage",
-    #        "chatuuid" : "<chatuuid>",
-    #        "msg_hash" : fake_msg_hash
-    #    }
+    def test_send_message(self):
+        fake_msg_hash = str(hashlib.sha256(b"fake").hexdigest())
+        fake_chatuuid = str(uuid.uuid4())
+        sendmsg_json = {
+            "action" : "sendmessage",
+            "chatuuid" : fake_chatuuid,
+            "msg_hash" : fake_msg_hash
+        }
 
-    #    sendmsg_str = json.dumps(sendmsg_json)
-    #    self.proto.dataReceived(sendmsg_str)
+        self.store_message_called = False
 
-    #    mock_send_message.assert_called_once()
+        @defer.inlineCallbacks
+        def fake_store_message(chatuuid, msghash):
+            self.store_message_called = True
+            result = yield { "5a6de3e8d6ca3f0fbd009af6" }
+            defer.returnValue(result)
 
-    #    response = self.tr.value()
-    #    try:
-    #        response_json = json.loads(response)
-    #    except:
-    #        self.fail("sendmessage response is not valid JSON")
+        self.db.store_message = fake_store_message
+
+        sendmsg_str = json.dumps(sendmsg_json)
+        self.proto.dataReceived(sendmsg_str)
+        #mock_send_message.assert_called_once()
+        self.assertTrue(self.store_message_called)
+
+        response = self.tr.value()
+        try:
+            response_json = json.loads(response)
+        except:
+            self.fail("sendmessage response is not valid JSON")
 
     ##@mock.patch.object(P2PChatDB, 'get_messages', autospec=True)
-    ##def test_get_messages(self, mock_get_messages):
-    #def test_get_messages(self):
-    #    mock_get_messages = mock.MagicMock()
+    #def test_get_messages(self, mock_get_messages):
+    def test_get_messages(self):
 
-    #    def fake_get_messages():
-    #        messages = yield { "foo" : "bar"}
-    #        defer.returnValue(messages)
+        self.get_messages_called = False
 
-    #    d = defer.Deferred()
-    #    d.addCallback(fake_get_messages)
-    #    mock_get_messages.return_value = d
-    #    #mock_get_messages.return_value = { "foo" : "bar" }
-    #    self.patch(self.db, "get_messages", mock_get_messages)
-    #    getmessages_json = {
-    #        "action" : "getmessages",
-    #        "chatuuid" : "<chatuuid>",
-    #        "fromtime" : 0
-    #    }
-    #    getmessages_str = json.dumps(getmessages_json)
-    #    self.proto.dataReceived(getmessages_str)
-    #    mock_get_messages.assert_called_once()
-    #    print("get_messages response: {}".format(self.tr.value()))
-        
+        @defer.inlineCallbacks
+        def fake_get_messages(chatuuid, fromtime):
+            self.get_messages_called = True
+            messages = yield { "foo" : "bar"}
+            defer.returnValue(messages)
 
+        self.db.get_messages = fake_get_messages
 
-#class GetMessagesTestCase(unittest.TestCase):
-#
-#    def setUp(self):
-#        self.db = P2PChatDB("localhost", 0, "", "")
-#        factory = TrackerFactory(self.db)
-#        self.proto = factory.buildProtocol()
-#        self.tr = proto_helpers.StringTransport()
-#        self.proto.makeConnection(self.tr)
-#    
-#    @mock.patch.object(P2PChatDB, 'get_messages', autospec=True)
-#    def test_get_messages(self, mock_get_messages):
-#        getmessages_json = {
-#            "action" : "getmessages",
-#            "chatuuid" : "<chatuuid>",
-#            "fromtime" : 0
-#        }
-#        getmessages_str = json.dumps(getmessages_json)
-#        self.proto.dataReceived(getmessages_str)
-#        mock_get_messages.assert_called_once()
+        fakechatuuid = str(uuid.uuid4())
+        getmessages_json = {
+            "action" : "getmessages",
+            "chatuuid" : fakechatuuid,
+            "fromtime" : 0
+        }
+        getmessages_str = json.dumps(getmessages_json)
+
+        self.proto.dataReceived(getmessages_str)
+
+        self.assertTrue(self.get_messages_called)
+
+        response = self.tr.value()
+        #TODO validate response
