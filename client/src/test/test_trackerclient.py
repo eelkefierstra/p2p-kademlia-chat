@@ -31,13 +31,9 @@ class MessageUpdateTestCase(unittest.TestCase):
 
     def test_create_chat(self):
         self.proto.create_chat()
-        
-    def test_parse_new_chat(self): 
-        #self.proto.create_chat()
-        chatuuid = uuid.uuid4()
-        chatresponse_json = {
-            "action" : "createchat",
-            "chatuuid" : str(chatuuid)
-        }
-        chatresponse = json.dumps(chatresponse_json)
-        self.proto.dataReceived(chatresponse)
+        request = self.tr.value()
+
+        try:
+            createchat_json = json.loads(request)
+        except json.decoder.JSONDecodeError:
+            self.fail("create_chat request is not valid json")

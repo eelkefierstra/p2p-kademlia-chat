@@ -84,7 +84,6 @@ class TrackerProtocol(Protocol):
             print("got_messages: {}".format(messages))
 
         d = self.db.get_messages(uuid, fromtime_date)
-        print(type(d))
         d.addCallback(write_get_messages) 
 
 
@@ -105,7 +104,6 @@ class TrackerProtocol(Protocol):
         elif action == "sendmessage":
             self.send_message(json_obj)
         elif action == "getmessages":
-            # TODO async
             self.get_messages(json_obj)
 
 
