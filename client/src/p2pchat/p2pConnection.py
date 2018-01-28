@@ -7,6 +7,7 @@ The p2p connection frontend
 from kademlia.network import Server
 import os
 import hashlib
+from twisted.internet.defer import inlineCallbacks
 
 
 class p2pConnection:
@@ -32,8 +33,12 @@ class p2pConnection:
         # Auto resend to network or ask user to resend?
         return
 
+    @inlineCallbacks
     def get(self, key):
-        message = self.server.get(key).addErrback(None)  # TODO: handle error in getting message
+        try:
+            message = yield self.server.get(key)
+        except:
+            # TODO: Could not get message from network, what now?
         return message
 
     def quit(self):
