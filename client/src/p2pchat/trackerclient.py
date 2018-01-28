@@ -32,6 +32,7 @@ class TrackerClientProtocol(Protocol):
     """
     def get_messages(self, fromtime):
         pass
+        
 
     def parse_new_chat(self, chatJSON):
         chatuuid = chatJSON["chatuuid"]
