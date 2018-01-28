@@ -24,6 +24,7 @@ class Application(tk.Frame):
 
         self.grid(sticky=tk.N+tk.E+tk.S+tk.W)
         self.createWidgets()
+        self.refreshChatList()
 
     def createWidgets(self):
         # Create Menubar
@@ -70,6 +71,7 @@ class Application(tk.Frame):
         textEntry.grid(row=1, column=0)
         
         createButton = tk.Button(topLevel, text='Create chat', command= lambda: self.uiInterface.createChat(textEntry.get()))
+        createButton.grid(row=2, column=0)
         return
 
     def configureChatmessageList(self):
@@ -103,6 +105,17 @@ class Application(tk.Frame):
         self.currentChat = self.chatListBox.get(selected)[0]
         # TODO: Get chat
         self.populate()
+    
+    def refreshChatList(self):
+        self.uiInterface.getChatList().addCallback(self._refreshChatList)
+        
+    def _refreshChatList(self, chatlist):
+        if chatList:
+            chatListBoxLength = self.chatListBox.size()
+            self.chatListBox.delete(0, chatListBoxLength-1)
+            for chat in chatList:
+                self.addChat(chat)
+            return
 
     def populate(self):
         '''Put in some fake data'''

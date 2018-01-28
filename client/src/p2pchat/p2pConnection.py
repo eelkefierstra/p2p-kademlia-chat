@@ -8,6 +8,7 @@ from kademlia.network import Server
 import os
 import hashlib
 from twisted.internet.defer import inlineCallbacks
+import asyncio
 
 
 class p2pConnection:
@@ -19,7 +20,9 @@ class p2pConnection:
         else:
             self.server = Server()
             self.server.listen(8468)  # Dynamic port range: 49152-65535
-            self.server.bootstrap([(bootstrapAdres, 8468)])
+            
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
         self.server.saveStateRegularly('cache.tmp', 10)
 
     def send(self, message):
@@ -39,7 +42,8 @@ class p2pConnection:
             message = yield self.server.get(key)
         except:
             # TODO: Could not get message from network, what now?
-        return message
+            return
+        defer.returnValue(message)
 
     def quit(self):
         return

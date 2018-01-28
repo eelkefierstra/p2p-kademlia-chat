@@ -10,7 +10,7 @@ from twisted.enterprise import adbapi
 class dbConnection():
     def __init__(self):
         self.dbpool = adbapi.ConnectionPool('sqlite3', 'storage.db')
-        checkTableExistence('chats').addCallback(initTables)
+        self.checkTableExistence('chats').addCallback(self.initTables)
         return
     
     # Checks if table exists in DB and return tablename in result[0][0]
@@ -28,7 +28,7 @@ class dbConnection():
 
     # Returns list of all connected chats
     def getChatList(self):
-        return self.dbpool.runInteraction(_getChatList)
+        return self.dbpool.runInteraction(self._getChatList)
     
     def _getChatList(self, txn):
         txn.execute("SELECT chatName FROM chats")
@@ -49,7 +49,7 @@ class dbConnection():
     
     def insertMessage(self, messageHash, messageContent):
         # Check if message already stored
-        return self.dbpool.runInteraction(_insertMessage, messageHash, messageContent)
+        return self.dbpool.runInteraction(self._insertMessage, messageHash, messageContent)
     
     def _insertMessage(self, txn, messageHash, messageContent):
         txn.execute("SELECT 1 FROM messages WHERE messageHash=?", [messageHash])
@@ -60,6 +60,6 @@ class dbConnection():
             txn.execute("INSERT INTO messages (?, ?)", [messageHash, messageContent])
         return
     
-    def close(self):
+    def __del__(self):
         self.dbpool.close()
         return

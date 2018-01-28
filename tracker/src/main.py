@@ -5,6 +5,8 @@ import argparse
 import p2pchat.p2pConnection
 from p2pchat.tracker import Tracker
 from p2pchat.database import P2PChatDB
+
+
 def check_file_exists(parser, filepath):
     if not os.path.exists(filepath):
         parser.error("The file {} does not exist!".format(arg))
