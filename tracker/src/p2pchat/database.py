@@ -32,7 +32,7 @@ class P2PChatDB(object):
 
     @defer.inlineCallbacks
     def store_message(self, chatuuid, msghash):
-        self.db.p2pchat.groupchats.update(
+        result = yield self.db.p2pchat.groupchats.update(
                 {"uuid" : chatuuid},
                 {"$push": 
                     {
@@ -43,6 +43,7 @@ class P2PChatDB(object):
                     }
                 }
             )
+        defer.returnValue(result)
 
     @defer.inlineCallbacks
     def get_messages(self, chatuuid, fromtime):
