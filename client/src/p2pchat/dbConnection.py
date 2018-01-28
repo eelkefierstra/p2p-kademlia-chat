@@ -59,3 +59,7 @@ class dbConnection():
         else:
             txn.execute("INSERT INTO messages (?, ?)", [messageHash, messageContent])
         return
+    
+    def close(self):
+        self.dbpool.close()
+        return
