@@ -21,28 +21,33 @@ class TrackerProtocol(Protocol):
     def create_chat(self):
         #TODO create unit test to see if the chat is created
         chatuuid = uuid.uuid4()
-        self.db.create_chat(chatuuid)
-        chatresponse_json = {
-            "action" : "createchat",
-            "chatuuid" : str(chatuuid)
-        }
-        return chatresponse_json
+
+        def write_created_chat(result):
+            chatresponse_json = {
+                "action" : "createchat",
+                "chatuuid" : str(chatuuid)
+            }
+            self.write_json(chatresponse_json)
+
+        d = self.db.create_chat(chatuuid)
+        d.addCallback(write_created_chat)
+
 
     def send_message(self, msg_json):
         # TODO keyerror
         chatuuid = msg_json["chatuuid"]
         msg_hash = msg_json["msg_hash"]
 
-        self.db.store_message(chatuuid, msg_hash)
+        def write_message_sent(result):
+            sendmsg_json = {
+                "action" : "sendmessage",
+                "chatuuid" : chatuuid,
+                "msg_hash" : msg_hash
+            }
+            self.write_json(sendmsg_json)
 
-        sendmsg_json = {
-            "action" : "sendmessage",
-            "chatuuid" : chatuuid,
-            "msg_hash" : msg_hash
-        }
-
-        return sendmsg_json
-
+        d = self.db.store_message(chatuuid, msg_hash)
+        d.addCallback(write_message_sent)
 
 
     """
@@ -96,14 +101,12 @@ class TrackerProtocol(Protocol):
         #TODO keyerror
         action = json_obj["action"]
         if action  == "createchat":
-            jsonresponse = self.create_chat()
-            self.write_json(jsonresponse)
+            self.create_chat()
         elif action == "sendmessage":
-            jsonresponse = self.send_message(json_obj)
-            self.write_json(jsonresponse)
+            self.send_message(json_obj)
         elif action == "getmessages":
             # TODO async
-            jsonresponse = self.get_messages(json_obj)
+            self.get_messages(json_obj)
 
 
 
