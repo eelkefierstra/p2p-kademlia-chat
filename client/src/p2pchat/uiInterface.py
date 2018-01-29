@@ -14,13 +14,14 @@ class uiInterface:
     def createChat(self, name):
         try:
             chatnameStr = str(name)
-            messageHash = self.p2p.send('User joined chat.')
+            # messageHash = self.p2p.send('User joined chat.')
             # TODO: Notify tracker
+            chatUUID = '0000-0000'
             self.dbConn.insertNewChat(chatnameStr, chatUUID)
         except:
             # Could not make a string from message input
             # If you get here, you done something very wrong!!!
-            pass
+            print('error in creating chat')
         return
     
     def removeChat(self):

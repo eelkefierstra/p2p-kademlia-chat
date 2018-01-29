@@ -46,15 +46,13 @@ class Application(tk.Frame):
         # Build the chat message view
         self.configureChatmessageList()
 
-        self.quitButton = tk.Button(self, text='Quit', command=reactor.stop, bg='#f22')
-        self.quitButton.grid(row=1, column=0, columnspan=2, sticky=tk.N+tk.S+tk.E+tk.W)
-
     def createMenubar(self):
         top = self.winfo_toplevel()
         self.menubar = tk.Menu(top)
 
         chatmenu = tk.Menu(self.menubar, tearoff=0)
         chatmenu.add_command(label='Create chat', command=self.createChatPopup)
+        chatmenu.add_command(label='Refresh chats', command=self.refreshChatList)
 
         self.menubar.add_cascade(label='Chats', menu=chatmenu)
         
@@ -70,8 +68,14 @@ class Application(tk.Frame):
         textEntry = tk.Entry(topLevel)
         textEntry.grid(row=1, column=0)
         
-        createButton = tk.Button(topLevel, text='Create chat', command= lambda: self.uiInterface.createChat(textEntry.get()))
+        createButton = tk.Button(topLevel, text='Create chat', command=lambda: self.createChatPopupAction(textEntry.get(), topLevel))
         createButton.grid(row=2, column=0)
+        return
+    
+    def createChatPopupAction(self, chatName, toplevel):
+        self.uiInterface.createChat(chatName)
+        self.refreshChatList()
+        toplevel.destroy()
         return
 
     def configureChatmessageList(self):
@@ -109,18 +113,21 @@ class Application(tk.Frame):
     def refreshChatList(self):
         self.uiInterface.getChatList().addCallback(self._refreshChatList)
         
-    def _refreshChatList(self, chatlist):
+    def _refreshChatList(self, chatList):
         if chatList:
+            print(chatList)
             chatListBoxLength = self.chatListBox.size()
             self.chatListBox.delete(0, chatListBoxLength-1)
             for chat in chatList:
                 self.addChat(chat)
             return
+        else:
+            self.addChat('*None*')
+            return
 
     def populate(self):
         '''Put in some fake data'''
         # TODO: get real chat messages to show up
-        # TODO: reset frame to show new chat
         for label in self.chatListLabels:
             label.destroy()
         random.seed()
