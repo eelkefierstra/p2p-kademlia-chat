@@ -21,12 +21,12 @@ class TrackerProtocol(NetstringReceiver):
 
     def create_chat(self):
         #TODO create unit test to see if the chat is created
-        chatuuid = uuid.uuid4()
+        chatuuid = str(uuid.uuid4())
 
         def write_created_chat(result):
             chatresponse_json = {
                 "action" : "createdchat",
-                "chatuuid" : str(chatuuid)
+                "chatuuid" : chatuuid
             }
             self.write_json(chatresponse_json)
 
@@ -38,6 +38,7 @@ class TrackerProtocol(NetstringReceiver):
         # TODO keyerror
         chatuuid = msg_json["chatuuid"]
         msg_hash = msg_json["msg_hash"]
+        timesent = datetime.datetime.now()
 
         def write_message_sent(result):
             sendmsg_json = {
@@ -47,7 +48,7 @@ class TrackerProtocol(NetstringReceiver):
             }
             self.write_json(sendmsg_json)
 
-        d = self.db.store_message(chatuuid, msg_hash)
+        d = self.db.store_message(chatuuid, msg_hash, timesent)
         d.addCallback(write_message_sent)
 
     """
@@ -55,29 +56,29 @@ class TrackerProtocol(NetstringReceiver):
     """
     def get_messages(self, msg_request_json):
         fromtime = msg_request_json["fromtime"]
-        fromtime_date = datetime.datetime.fromtimestamp(fromtime)
+        fromtime_date = datetime.datetime.fromtimestamp(int(fromtime))
+        tilltime = int(time.time())
         uuid = msg_request_json["chatuuid"]
 
         """
         Callback for writing messages to the tracker client
         """
-        def write_get_messages(messages):
+        def write_get_messages(messages_results):
             #TODO Actually get the messages
+            messages = []
+            for messages_result in messages_results:
+                messages.extend(
+                    {
+                        "hash" : message["hash"],
+                        "time" : message["time"].timestamp()
+                    } for message in messages_result['messages']
+                )
+            
             chatmessages_json = {
                 "action" : "gotmessages",
                 "fromtime" : fromtime,
-                "tilltime" : time.time(),
-                "messages" : 
-                [
-                    {
-                        "time" : 4,
-                        "hash" : hashlib.sha256(b"foo").hexdigest()
-                    },
-                    {
-                        "time" : 4,
-                        "hash" : hashlib.sha256(b"bar").hexdigest()
-                    }
-                ],
+                "tilltime" : tilltime,
+                "messages" : messages,
                 "chatuuid" : uuid
             }
             self.write_json(chatmessages_json)
