@@ -5,11 +5,15 @@ The p2p tracker client
 """
 
 from twisted.internet.protocol import Protocol, ClientFactory
+from twisted.internet.endpoints import TCP4ClientEndpoint
 from twisted.internet import reactor
 import json
 
 
 class TrackerClientProtocol(Protocol):
+
+    def __init__(self, factory):
+        self.factory = factory
 
     def write_json(self, json_obj):
         response = json.dumps(json_obj)
@@ -47,34 +51,65 @@ class TrackerClientProtocol(Protocol):
     def parse_new_chat(self, chatJSON):
         chatuuid = chatJSON["chatuuid"]
         # TODO do something with this new chatuuid
-        print("[*] Created new chat with uuid: {}".format(chatuuid))
+        #print("[*] Created new chat with uuid: {}".format(chatuuid))
+        #TODO use callback
+        self.factory.notifier.on_chat_created(chatuuid)
+
+
+    def parse_message_sent(self, msgJSON):
+        chatuuid = msgJSON["chatuuid"]
+        msg_hash = msgJSON["msg_hash"]
+        self.factory.notifier.on_message_sent(chatuuid, msg_hash)
 
     def parse_messages(self, messagesJSON):
         # TODO if fromtime >= lastmsg_time, we missed some messages.
         # get the messages from lastmsg_time till fromtime also
+        chatuuid = messagesJSON["chatuuid"]
         fromtime = messagesJSON["fromtime"]
         # TODO update the newest chat message time
         tilltime = messagesJSON["tilltime "]
-        print("[*] Got a new message, fromtime: {}, tilltime: {}".format(fromtime,tilltime))
+        messages = messagesJSON["messages"]
+        self.factory.notifier.on_messages_received(chatuuid, fromtime, tilltime, messages)
 
     def dataReceived(self, data):
         dataJSON = json.loads(data)
         action = dataJSON["action"]
-        if action == "createchat":
+        if action == "createdchat":
             # Created new chat
             self.parse_new_chat(dataJSON)
-        elif action == "getmessages":
+        elif action == "gotmessages":
             # New message locations arrived
             self.parse_messages(dataJSON)
+        elif action == "sentmessage":
+            self.parse_message_sent(dataJSON)
+
+class ITrackerNotifier(object):
+
+    def on_chat_created(self, chatuuid):
+        """
+        Called when a chat is created
+
+        """
+
+    def on_message_sent(self, chatuuid, msg_hash):
+        """
+        Called when a message is sent to the tracker
+        """
+
+    def on_messages_received(self, chatuuid, fromtime, tilltime, messages):
+        """
+        Called when messages are received from the tracker
+        """
 
 
 class TrackerClientFactory(ClientFactory):
 
-    def __init__(self):
+    def __init__(self, notifier=ITrackerNotifier()):
         self.lastmsg_time = 0
+        self.notifier = notifier
 
     def buildProtocol(self, addr):
-        return TrackerClientProtocol()
+        return TrackerClientProtocol(self)
 
     def clientConnectionFailed(self, connector, reason):
         print("[*] Connection failed: {}".format(reason))
@@ -83,14 +118,24 @@ class TrackerClientFactory(ClientFactory):
         print("[*] Connection lost: {}".format(reason))
 
 
+
 class TrackerClient:
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, notifier=ITrackerNotifier()):
         self.host = host
         self.port = port
+        self.factory = TrackerClientFactory(notifier)
 
-    def start(self):
-        factory = TrackerClientFactory()
-        reactor.connectTCP(host, port, factory)
+    def connect(self):
+        endpoint = TCP4ClientEndpoint(reactor, self.host, self.port)
+        return endpoint.connect(self.factory)
 
-    def onMessageReceived
+        #protocol = None
+        #def prot_connected(prot):
+        #    protocol = prot
+
+        #d.addCallback(prot_connected)
+        #return protocol
+
+        #reactor.connectTCP(self.host, self.port, self.factory)
+        #return self.factory.buildProtocol((self.host, self.port))

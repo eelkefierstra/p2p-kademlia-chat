@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import datetime
+import time
 from OpenSSL import SSL
 from txmongo.connection import ConnectionPool
 from twisted.internet import defer, reactor, ssl
