@@ -11,9 +11,10 @@ import time
 import hashlib
 from twisted.internet import defer
 from twisted.internet.protocol import ServerFactory, Protocol
+from twisted.protocols.basic import NetstringReceiver
 from p2pchat.database import P2PChatDB
 
-class TrackerProtocol(Protocol):
+class TrackerProtocol(NetstringReceiver):
 
     def __init__(self, db):
         self.db = db
@@ -88,7 +89,8 @@ class TrackerProtocol(Protocol):
 
     def write_json(self, json_obj):
         response = json.dumps(json_obj)
-        self.transport.write(response.encode('utf-8'))
+        #self.transport.write(response.encode('utf-8'))
+        self.sendString(response.encode('utf-8'))
     
     def connectionMade(self):
         print("connected....")
@@ -97,8 +99,8 @@ class TrackerProtocol(Protocol):
     Not sure when we received the full data, so maybe use a delimiter or
     send the length in the request.
     """
-    def dataReceived(self, data):
-        json_obj = json.loads(data)
+    def stringReceived(self, string):
+        json_obj = json.loads(string)
         #TODO keyerror
         action = json_obj["action"]
         if action  == "createchat":
