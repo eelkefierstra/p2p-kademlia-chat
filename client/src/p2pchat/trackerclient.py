@@ -4,20 +4,22 @@
 The p2p tracker client
 """
 
-from twisted.internet.protocol import Protocol, ClientFactory
+from twisted.internet.protocol import ClientFactory
+from twisted.protocols.basic import NetstringReceiver
 from twisted.internet.endpoints import TCP4ClientEndpoint
 from twisted.internet import reactor
 import json
 
 
-class TrackerClientProtocol(Protocol):
+class TrackerClientProtocol(NetstringReceiver):
 
     def __init__(self, factory):
         self.factory = factory
 
     def write_json(self, json_obj):
         response = json.dumps(json_obj)
-        self.transport.write(response.encode('utf-8'))
+        #self.transport.write(response.encode('utf-8'))
+        self.sendString(response.encode('utf-8'))
 
     def create_chat(self):
         createchat_json = {
@@ -71,8 +73,8 @@ class TrackerClientProtocol(Protocol):
         messages = messagesJSON["messages"]
         self.factory.notifier.on_messages_received(chatuuid, fromtime, tilltime, messages)
 
-    def dataReceived(self, data):
-        dataJSON = json.loads(data)
+    def stringReceived(self, string):
+        dataJSON = json.loads(string)
         action = dataJSON["action"]
         if action == "createdchat":
             # Created new chat

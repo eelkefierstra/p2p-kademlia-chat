@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import sys
+sys.path.append('../src/')
 from p2pchat.trackerclient import TrackerClient, ITrackerNotifier
 from twisted.internet import reactor, defer
 import hashlib
