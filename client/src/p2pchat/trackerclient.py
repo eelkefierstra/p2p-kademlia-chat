@@ -11,12 +11,37 @@ import json
 
 class TrackerClientProtocol(Protocol):
 
+    def write_json(self, json_obj):
+        response = json.dumps(json_obj)
+        self.transport.write(response.encode('utf-8'))
+
     def create_chat(self):
         createchat_json = {
                 "action"  : "createchat"
         }
-        createchat_str = json.dumps(createchat_json)
-        self.transport.write(createchat_str.encode('utf-8'))
+        # TODO use second callback instead
+        self.write_json(createchat_json)
+
+    def send_message(self, chatuuid, msg_hash):
+        sendmsg_json = {
+            "action" : "sendmessage",
+            "chatuuid" : chatuuid,
+            "msg_hash" : msg_hash
+        }
+        self.write_json(sendmsg_json)
+
+    """
+    @param fromtime Receive messages after fromtime (unix timestamp utc)
+    """
+    def get_messages(self, chatuuid, fromtime):
+        getmessages_json = {
+                "action" : "getmessages",
+                "chatuuid" : chatuuid,
+                "fromtime" : str(fromtime)
+        }
+        self.write_json(getmessages_json)
+
+        
         
 
     def parse_new_chat(self, chatJSON):
@@ -67,3 +92,5 @@ class TrackerClient:
     def start(self):
         factory = TrackerClientFactory()
         reactor.connectTCP(host, port, factory)
+
+    def onMessageReceived
