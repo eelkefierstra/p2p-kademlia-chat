@@ -40,7 +40,7 @@ class TrackerProtocol(Protocol):
 
         def write_message_sent(result):
             sendmsg_json = {
-                "action": "sendmessage",
+                "action": "sentmessage",
                 "chatuuid": chatuuid,
                 "msg_hash": msg_hash
             }
@@ -60,12 +60,12 @@ class TrackerProtocol(Protocol):
         Callback for writing messages to the tracker client
         """
         def write_get_messages(messages):
-            #TODO Actually get the messages
+            # TODO Actually get the messages
             chatmessages_json = {
-                "action": "getmessages",
+                "action": "gotmessages",
                 "fromtime": fromtime,
                 "tilltime": time.time(),
-                "messages": 
+                "messages":
                 [
                     {
                         "time": 4,
@@ -75,18 +75,21 @@ class TrackerProtocol(Protocol):
                         "time": 4,
                         "hash": hashlib.sha256(b"bar").hexdigest()
                     }
-                ]
+                ],
+                "chatuuid": uuid
             }
             self.write_json(chatmessages_json)
             # TODO actually do something useful with the messages
-            print("got_messages: {}".format(messages))
 
         d = self.db.get_messages(uuid, fromtime_date)
-        d.addCallback(write_get_messages) 
+        d.addCallback(write_get_messages)
 
     def write_json(self, json_obj):
         response = json.dumps(json_obj)
         self.transport.write(response.encode('utf-8'))
+
+    def connectionMade(self):
+        print("connected....")
 
     """
     Not sure when we received the full data, so maybe use a delimiter or
@@ -112,7 +115,7 @@ class TrackerFactory(ServerFactory):
     def __init__(self, db):
         self.db = db
 
-    def buildProtocol(self):
+    def buildProtocol(self, addr):
         return TrackerProtocol(self.db)
 
 
