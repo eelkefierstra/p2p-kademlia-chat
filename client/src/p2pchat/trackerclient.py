@@ -69,7 +69,7 @@ class TrackerClientProtocol(NetstringReceiver):
         chatuuid = messagesJSON["chatuuid"]
         fromtime = messagesJSON["fromtime"]
         # TODO update the newest chat message time
-        tilltime = messagesJSON["tilltime "]
+        tilltime = messagesJSON["tilltime"]
         messages = messagesJSON["messages"]
         self.factory.notifier.on_messages_received(chatuuid, fromtime, tilltime, messages)
 
