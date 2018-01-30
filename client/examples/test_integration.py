@@ -33,6 +33,7 @@ class MyChatApp(ITrackerNotifier):
         print("[*] sending message ...")
         fakehash = str(hashlib.sha256(b"foo").hexdigest())
         self.protocol.send_message(chatuuid, fakehash)
+        return chatuuid
 
     def get_messages(self, chatuuid):
         self.protocol.get_messages(chatuuid, 0)
