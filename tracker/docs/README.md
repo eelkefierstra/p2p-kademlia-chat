@@ -1,6 +1,11 @@
 # Installing the tracker
 Run `setup.py install` for installing the tracker
 
+# install mongodb-server
+```
+sudo apt install mongodb-server
+```
+
 # Configuring the tracker
 ```
 cd /etc/ssl

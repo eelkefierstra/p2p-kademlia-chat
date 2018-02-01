@@ -4,10 +4,8 @@ import argparse
 import p2pchat.trackerclient
 import p2pchat.p2pConnection
 import p2pchat.uiInterface
-import p2pchat.application
 import p2pchat.dbConnection
-from tkinter import *
-from twisted.internet import tksupport, reactor
+from twisted.internet import reactor
 
 
 def parse_args():
@@ -37,15 +35,7 @@ def main():
     p2p = p2pchat.p2pConnection.p2pConnection(args.host)
     dbConn = p2pchat.dbConnection.dbConnection()
 
-    uiinterface = p2pchat.uiInterface.uiInterface(p2p, trackerclient, dbConn)
-
-    root = Tk()
-    # This fixes the reactor error on closing root window with the 'X' button
-    root.protocol("WM_DELETE_WINDOW", reactor.stop)
-    gui = p2pchat.application.Application(root, uiinterface)
-    gui.master.title('Independed chat')
-    tksupport.install(root)
-
+    p2pchat.uiInterface.UIInterface(p2p, trackerclient, dbConn)
 
     reactor.run()
 
