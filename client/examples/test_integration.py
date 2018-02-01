@@ -13,6 +13,10 @@ class MyChatApp(ITrackerNotifier):
     def on_chat_created(self, chatuuid):
         print("[*] Created new chat with uuid: {}".format(chatuuid))
         d = defer.Deferred()
+        d.addCallback(self.receive_notifications)
+        def print_err(err):
+            print(err)
+        d.addErrback(print_err)
         d.addCallback(self.send_msg)
         d.addCallback(self.get_messages)
         d.callback(chatuuid)
@@ -24,9 +28,17 @@ class MyChatApp(ITrackerNotifier):
     def on_messages_received(self, chatuuid, fromtime, tilltime, messages):
         print("[*] Messages received: {} {} {} {}".format(chatuuid, fromtime, tilltime, messages))
 
+    def on_message_received(self, chatuuid, msg_hash, time_sent):
+        print("[*] Message received: {} {} {}".format(chatuuid, msg_hash, time_sent))
+
     def create_chat(self, protocol):
         self.protocol = protocol
         protocol.create_chat()
+
+    def receive_notifications(self, chatuuid):
+        chatuuids = [chatuuid]
+        self.protocol.receive_notifications(chatuuids)
+        return chatuuid
 
     def send_msg(self, chatuuid):
         # TODO supply hash

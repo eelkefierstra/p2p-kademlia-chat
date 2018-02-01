@@ -48,6 +48,7 @@ class MessageUpdateTestCase(unittest.TestCase):
         try:
             send_request_json = json.loads(send_request)
         except json.decoder.JSONDecodeError:
+            print(send_request)
             self.fail("send_message request is not valid json")
 
         self.assertTrue("chatuuid" in send_request_json)

@@ -19,6 +19,7 @@ class TrackerProtocol(NetstringReceiver):
     def __init__(self, factory, db):
         self.factory = factory
         self.db = db
+        self.joinedchats = set()
 
     def create_chat(self):
         #TODO create unit test to see if the chat is created
@@ -54,6 +55,15 @@ class TrackerProtocol(NetstringReceiver):
         d.addCallback(write_message_sent)
         # Update the other clients about a message being sent
         self.factory.push_message(self, chatuuid, msg_hash, timesent_ts)
+
+    def get_notifications(self, notification_json):
+        chatuuids = notification_json["chats"]
+        for chatuuid in chatuuids:
+            if chatuuid not in self.factory.notiviables:
+                self.factory.notiviables[chatuuid] = set()
+
+            self.joinedchats.add(chatuuid)
+            self.factory.notiviables[chatuuid].add(self)
 
     def push_message(self, chatuuid, msg_hash, time_sent):
         chatmsg_json = {
@@ -107,22 +117,22 @@ class TrackerProtocol(NetstringReceiver):
         self.sendString(response.encode('utf-8'))
     
     def connectionMade(self):
-        self.factory.protocols.append(self)
-        print("[*] New client connected: {}".format("<IP addr>"))
+    #    #self.factory.protocols.append(self)
+        ip_addr = self.transport.getPeer().host
+        print("[*] New client connected: {}".format(ip_addr))
 
-    def connectionLost(self, reason):
-        self.factory.protocols.remove(self)
 
-    """
-    Not sure when we received the full data, so maybe use a delimiter or
-    send the length in the request.
-    """
+    #def connectionLost(self, reason):
+    #    #self.factory.protocols.remove(self)
+
     def stringReceived(self, string):
         json_obj = json.loads(string)
         #TODO keyerror
         action = json_obj["action"]
         if action  == "createchat":
             self.create_chat()
+        elif action == "get_notified":
+            self.get_notifications(json_obj)
         elif action == "sendmessage":
             self.send_message(json_obj)
         elif action == "getmessages":
@@ -138,13 +148,18 @@ class TrackerFactory(ServerFactory):
     """
     def __init__(self, db):
         self.db = db
-        self.protocols = []
+        self.notiviables = { }
 
     def buildProtocol(self, addr):
         return TrackerProtocol(self, self.db)
 
     def push_message(self, protocol, chatuuid, msg_hash, time_sent):
-        for prot in self.protocols:
+        # only send to protocols who are registered to chatuuid
+        if chatuuid not in self.notiviables:
+            return
+
+        
+        for prot in self.notiviables[chatuuid]:
             if prot != protocol:
                 prot.push_message(chatuuid, msg_hash, time_sent)
 
