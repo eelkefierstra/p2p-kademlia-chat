@@ -50,14 +50,13 @@ class p2pConnection:
         # Auto resend to network or ask user to resend?
         return
 
-    @inlineCallbacks
     def get(self, key):
         try:
-            message = yield self.server.get(key)
+            message = self.loop.run_until_complete(self.server.get(key))
         except:
             # TODO: Could not get message from network, what now?
             return
-        defer.returnValue(message)
+        return message
 
     def quit(self):
         return

@@ -14,6 +14,7 @@ class UIInterface(tk.Frame):
     def __init__(self, master, application):
         self.application = application
         self.chatListLabels = []
+        self.chat_uuid = []
         
         tk.Frame.__init__(self, master)
         top = self.winfo_toplevel()
@@ -92,7 +93,7 @@ class UIInterface(tk.Frame):
         self.chatMessageCanvas.create_window(4, 4, window=self.chatMessageFrame, anchor=tk.NE, tags='self.chatMessageFrame')
 
         self.chatMessageFrame.bind('<Configure>', self.on_frame_configure)
-        self.refresh_chat_messages()
+        # self.application.get_chat_messages(self.chat_uuid[0]).addCallback(self.refresh_chat_messages)
 
         self.chatMessageEntry = tk.Entry(self.chatView)
         self.chatMessageEntry.grid(row=1, column=0, sticky=tk.W+tk.E)
@@ -105,16 +106,17 @@ class UIInterface(tk.Frame):
         self.chatMessageEntry.delete(0, len(chatMessage))
         return
 
-    def add_chat(self, chatName):
+    def add_chat(self, chatName, chatuuid):
         self.chatListBox.insert(tk.END, chatName)
+        self.chat_uuid.append(chatuuid)
 
     def change_chat(self):
         selected = self.chatListBox.curselection()
         if selected == ():
             return
         self.currentChat = self.chatListBox.get(selected)[0]
-        # TODO: Get chat
-        self.refresh_chat_messages()
+        chatuuid = self.chat_uuid[selected]
+        self.application.get_chat_messages(chatuuid).addCallback(self.refresh_chat_messages)
     
     def refresh_chat_list(self):
         self.application.get_chat_list().addCallback(self._refresh_chat_list)
@@ -123,30 +125,24 @@ class UIInterface(tk.Frame):
         if chatList:
             chatListBoxLength = self.chatListBox.size()
             self.chatListBox.delete(0, chatListBoxLength-1)
+            self.chat_uuid = []
             for chat in chatList:
-                self.add_chat(chat)
+                self.add_chat(chat[0], chat[1])
             return
         else:
-            self.add_chat('*None*')
+            self.add_chat('*None*', '')
             return
 
-    def refresh_chat_messages(self):
+    def refresh_chat_messages(self, chat_messages):
         '''Put in some fake data'''
         # TODO: get real chat messages to show up
         for label in self.chatListLabels:
             label.destroy()
-        random.seed()
-        for row in range(random.randint(50, 100)):
-            if row % 2 == 0:
-                sender = 'You'
-            else:
-                sender = 'Me'
-            chatSenderLabel = tk.Label(self.chatMessageFrame, text=sender)
-            chatSenderLabel.grid(row=row, column=0)
-            self.chatListLabels.append(chatSenderLabel)
-            t = "This is message number %s" % row
-            chatMessageLabel = tk.Label(self.chatMessageFrame, text=t)
-            chatMessageLabel.grid(row=row, column=1)
+        
+        for result_row in chat_messages:
+            message = result_row[0]
+            chatMessageLabel = tk.Label(self.chatMessageFrame, text=message)
+            chatMessageLabel.grid(row=0, column=0)
             self.chatListLabels.append(chatMessageLabel)
 
     def on_frame_configure(self, event):

@@ -18,8 +18,8 @@ This is the client for the p2p kademlia chat protocol
     helpPort = "The port to connect to. Default to 1337."
     parser.add_argument('--port', type=int, help=helpPort, default=1337)
     
-    helpPort-p2p = "The port to connect to. Default to 8468." # Dynamic port range: 49152-65535
-    parser.add_argument('--port-p2p', type=int, help=helpPort-p2p, default=8468)
+    helpPort_p2p = "The port to listen on for P2P connections. Default to 8468." # Dynamic port range: 49152-65535
+    parser.add_argument('--port-p2p', type=int, help=helpPort_p2p, default=8468)
 
     helpHost = "The host to connect to."
     parser.add_argument('--host', help=helpHost, default='127.0.0.1')
@@ -33,7 +33,7 @@ This is the client for the p2p kademlia chat protocol
 def main():
     args = parse_args()
 
-    p2p = p2pchat.p2pConnection.p2pConnection(args.host, args.port-p2p)
+    p2p = p2pchat.p2pConnection.p2pConnection(args.host, args.port_p2p)
     dbConn = p2pchat.dbConnection.dbConnection()
 
     app = Application(p2p, dbConn)

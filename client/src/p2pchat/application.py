@@ -54,6 +54,10 @@ class Application(ITrackerNotifier):
         # TODO: Only send left chat message?
         return
     
+    def get_chat_messages(self, chatuuid):
+        self.dbConn.get_chat_messages(chatuuid)
+        return
+    
     def send_chat_message(self, chat, message, chatUUID):
         try:
             messageStr = str(message)
@@ -68,7 +72,6 @@ class Application(ITrackerNotifier):
     
     def get_chat_list(self):
         return self.dbConn.get_chat_list()
-    
 
     def on_chat_created(self, chatuuid):
         """
@@ -82,7 +85,6 @@ class Application(ITrackerNotifier):
         self.p2p.set_chat_info(chatuuid, chatname)
         self.dbConn.insert_new_chat(chatname, chatuuid)
         self.gui.refresh_chat_list()
-        # Add chats to gui
 
     def on_message_sent(self, chatuuid, msg_hash):
         """
@@ -95,6 +97,12 @@ class Application(ITrackerNotifier):
         Called when messages are received from the tracker
         """
         print("Messages received: {} {} {} {}".format(chatuuid, fromtime, tilltime, messages))
+        
+        for message in messages:
+            message_hash = message['hash']
+            message_time = message['time']
+            message_content = self.p2p.get(message_hash)
+            self.dbConn.insert_message(message_hash, message_content, message_time, chatuuid)
 
     def on_message_received(self, chatuuid, msg_hash, time_sent):
         """
