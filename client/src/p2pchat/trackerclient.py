@@ -124,7 +124,7 @@ class ITrackerNotifier(object):
         Called when messages are received from the tracker
         """
 
-    def on_message_received(chatuuid, msg_hash, time_sent):
+    def on_message_received(self, chatuuid, msg_hash, time_sent):
         """
         Called when a message is pushed by the tracker
         """

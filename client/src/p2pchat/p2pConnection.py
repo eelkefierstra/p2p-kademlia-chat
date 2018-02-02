@@ -25,11 +25,24 @@ class p2pConnection:
             loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
         self.server.saveStateRegularly('cache.tmp', 10)
 
-    def send(self, message):
-        m = hashlib.sha256()
-        m.update(str.encode(message))
-        key = m.hexdigest()
+    def get_key(self, content):
+        return hashlib.sha256(content).hexdigest()
+
+    def set_chat_info(self, chatuuid, groupname):
+        chat_info = {
+                    "name": groupname
+                }
+        chat_info_str = json.dumps(chat_info)
+        key = chatuuid
+        self._send(key, chat_info_str)
+
+
+    def _send(self, key, message):
         self.server.set(key, message).addErrback(self.sendFailed)  # TODO: handle error in setting message
+
+    def send(self, message):
+        key = self.get_key(message)
+        self._send(key, message)
         return key
 
     def sendFailed(self, err):

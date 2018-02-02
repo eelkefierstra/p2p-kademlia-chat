@@ -1,154 +1,101 @@
 #!/usr/bin/env python3
 '''
 @author: Eelke
-The GUI for the chat application
+Interface for UI to communicate to core
 '''
+from twisted.internet.defer import inlineCallbacks
+from p2pchat.trackerclient import ITrackerNotifier
+from p2pchat.ui_interface import UIInterface
+from tkinter import *
+from twisted.internet import tksupport, reactor
+import queue
 
-import tkinter as tk
-from twisted.internet import reactor
-from twisted.internet.task import react
-import random
 
-
-class Application(tk.Frame):
-    def __init__(self, master, uiInterface):
-        self.uiInterface = uiInterface
-        self.chatListLabels = []
+class Application(ITrackerNotifier):
+    def __init__(self, p2pObject, dbConnection):
+        self.p2p = p2pObject
+        #self.tracker = trackerclient
+        self.dbConn = dbConnection
         
-        tk.Frame.__init__(self, master)
-        top = self.winfo_toplevel()
-        top.rowconfigure(0, weight=1)
-        top.columnconfigure(0, weight=1)
-        self.rowconfigure(1, weight=1)
-        self.columnconfigure(1, weight=1)
+        root = Tk()
+        # This fixes the reactor error on closing root window with the 'X' button
+        root.protocol("WM_DELETE_WINDOW", reactor.stop)
+        self.gui = UIInterface(root, self)
+        self.gui.master.title('Independed chat')
+        tksupport.install(root)
 
-        self.grid(sticky=tk.N+tk.E+tk.S+tk.W)
-        self.create_widgets()
-        self.refresh_chat_list()
-
-    def create_widgets(self):
-        # Create Menubar
-        self.create_menubar()
-        # Build the chat listing
-        self.chatList = tk.Frame(self)
-        self.chatList.grid(row=0, column=0)
-
-        self.chatScroll = tk.Scrollbar(self.chatList, orient=tk.VERTICAL)
-        self.chatScroll.grid(row=0, column=1, sticky=tk.N+tk.S)
-        self.chatListBox = tk.Listbox(self.chatList, yscrollcommand=self.chatScroll.set)
-        self.chatListBox.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
-        self.chatListBox.activate(0)
-        self.change_chat() # Initiate program on first chat
-        self.chatScroll['command'] = self.chatListBox.yview
-        self.chatListButton = tk.Button(self.chatList, text='Select chat', command=self.change_chat)
-        self.chatListButton.grid(row=1, column=0, columnspan=2, sticky=tk.E+tk.W)
-
-        # Build the chat message view
-        self.configure_chatmessage_list()
-
-    def create_menubar(self):
-        top = self.winfo_toplevel()
-        self.menubar = tk.Menu(top)
-
-        chatmenu = tk.Menu(self.menubar, tearoff=0)
-        chatmenu.add_command(label='Create chat', command=self.create_chat_popup)
-        chatmenu.add_command(label='Refresh chats', command=self.refresh_chat_list)
-
-        self.menubar.add_cascade(label='Chats', menu=chatmenu)
+        self.chatinfoqueue = queue.Queue()
         
-        top.config(menu=self.menubar)
+
+    def set_trackerclient(self, trackerclient):
+        self.tracker = trackerclient
+
+    def start(self):
+        d = self.tracker.connect()
+        d.addCallback(self.tracker_connected)
+
+
+        
+    def tracker_connected(self, proto):
+        self.tracker_protocol = proto
+    
+    
+    def create_chat(self, chatname):
+        print("Creating chat")
+        self.chatinfoqueue.put(chatname)
+        # Safe group info in the p2p network
+        self.tracker_protocol.create_chat()
+        #def chat_created(self, chatuuid):
+        #    #TODO
+    
+    def remove_chat(self):
+        messagehash = self.p2p.send('User left chat.')
+        self.dbConn.deleteChat(chatName, chatUUID) # Who knows UUID??????????
+        # TODO: Only send left chat message?
         return
     
-    def create_chat_popup(self):
-        createChatText = 'Enter name for new chat:'
-        topLevel = tk.Toplevel()
-        label = tk.Label(topLevel, text=createChatText)
-        label.grid(row=0, column=0)
-        
-        textEntry = tk.Entry(topLevel)
-        textEntry.grid(row=1, column=0)
-        
-        createButton = tk.Button(topLevel, text='Create chat', command=lambda: self.create_chat_popup_action(textEntry.get(), topLevel))
-        createButton.grid(row=2, column=0)
+    def send_chat_message(self, chat, message, chatUUID):
+        try:
+            messageStr = str(message)
+            messagehash = self.p2p.send(messageStr)
+            # TODO: send message hash to tracker
+            self.dbConn.insertMessage(messagehash, messageStr)
+        except:
+            # Could not make a string from message input
+            # If you get here, you done something very wrong!!!
+            pass
         return
     
-    def create_chat_popup_action(self, chatName, toplevel):
-        self.uiInterface.create_chat(chatName)
-        self.refresh_chat_list()
-        toplevel.destroy()
-        return
-
-    def configure_chatmessage_list(self):
-        self.chatView = tk.Frame(self)
-        self.chatView.grid(row=0, column=1, sticky=tk.N+tk.E+tk.S+tk.W)
-
-        self.chatMessageCanvas = tk.Canvas(self.chatView, borderwidth=0, background='#fff')
-        self.chatMessageFrame = tk.Frame(self.chatMessageCanvas, background='#fff')
-        self.chatMessageScroll = tk.Scrollbar(self.chatView, orient='vertical', command=self.chatMessageCanvas.yview)
-        self.chatMessageCanvas.configure(yscrollcommand=self.chatMessageScroll.set)
-
-        self.chatMessageScroll.grid(row=0, column=2, sticky=tk.N+tk.S)
-        self.chatMessageCanvas.grid(row=0, column=0, sticky=tk.N+tk.E+tk.S+tk.W, columnspan=2)
-        self.chatMessageCanvas.create_window(4, 4, window=self.chatMessageFrame, anchor=tk.NE, tags='self.chatMessageFrame')
-
-        self.chatMessageFrame.bind('<Configure>', self.on_frame_configure)
-        self.refresh_chat_messages()
-
-        self.chatMessageEntry = tk.Entry(self.chatView)
-        self.chatMessageEntry.grid(row=1, column=0, sticky=tk.W+tk.E)
-        self.chatMessageButtonSend = tk.Button(self.chatView, text='Send', command=self.send_chat_message)
-        self.chatMessageButtonSend.grid(row=1, column=1)
+    def get_chat_list(self):
+        return self.dbConn.get_chat_list()
     
-    def send_chat_message(self):
-        chatMessage = self.chatMessageEntry.get()
-        self.uiInterface.send_chat_message(self.currentChat, chatMessage)
-        self.chatMessageEntry.delete(0, len(chatMessage))
-        return
 
-    def add_chat(self, chatName):
-        self.chatListBox.insert(tk.END, chatName)
+    def on_chat_created(self, chatuuid):
+        """
+        Called when a chat is created
 
-    def change_chat(self):
-        selected = self.chatListBox.curselection()
-        if selected == ():
-            return
-        self.currentChat = self.chatListBox.get(selected)[0]
-        # TODO: Get chat
-        self.refresh_chat_messages()
-    
-    def refresh_chat_list(self):
-        self.uiInterface.get_chat_list().addCallback(self._refresh_chat_list)
-        
-    def _refresh_chat_list(self, chatList):
-        if chatList:
-            chatListBoxLength = self.chatListBox.size()
-            self.chatListBox.delete(0, chatListBoxLength-1)
-            for chat in chatList:
-                self.add_chat(chat)
-            return
-        else:
-            self.add_chat('*None*')
-            return
+        """
+        print("Created chat: {}".format(chatuuid))
+        # TODO set p2p info
+        chatname = self.chatinfoqueue.get()
+        # TODO sanity checks on chatname
+        self.p2p.set_chat_info(chatuuid, chatname)
+        self.dbConn.insert_new_chat(chatname, chatuuid)
 
-    def refresh_chat_messages(self):
-        '''Put in some fake data'''
-        # TODO: get real chat messages to show up
-        for label in self.chatListLabels:
-            label.destroy()
-        random.seed()
-        for row in range(random.randint(50, 100)):
-            if row % 2 == 0:
-                sender = 'You'
-            else:
-                sender = 'Me'
-            chatSenderLabel = tk.Label(self.chatMessageFrame, text=sender)
-            chatSenderLabel.grid(row=row, column=0)
-            self.chatListLabels.append(chatSenderLabel)
-            t = "This is message number %s" % row
-            chatMessageLabel = tk.Label(self.chatMessageFrame, text=t)
-            chatMessageLabel.grid(row=row, column=1)
-            self.chatListLabels.append(chatMessageLabel)
+    def on_message_sent(self, chatuuid, msg_hash):
+        """
+        Called when a message is sent to the tracker
+        """
+        print("Message sent: {} {}".format(chatuuid, msg_hash))
 
-    def on_frame_configure(self, event):
-        '''Reset the scroll region to encompass the inner frame'''
-        self.chatMessageCanvas.configure(scrollregion=self.chatMessageCanvas.bbox("all"))
+    def on_messages_received(self, chatuuid, fromtime, tilltime, messages):
+        """
+        Called when messages are received from the tracker
+        """
+        print("Messages received: {} {} {} {}".format(chatuuid, fromtime, tilltime, messages))
+
+    def on_message_received(self, chatuuid, msg_hash, time_sent):
+        """
+        Called when a message is pushed by the tracker
+        """
+        print("Received message : {} {} {}".format(chatuuid, msg_hash, time_sent))
