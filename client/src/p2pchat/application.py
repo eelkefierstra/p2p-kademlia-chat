@@ -91,6 +91,7 @@ class Application(ITrackerNotifier):
 
         """
         # TODO set p2p info
+        print("Created chat with chatuuid: {}".format(chatuuid))
         chatname = self.chatinfoqueue.get()
         # TODO sanity checks on chatname
         self.p2p.set_chat_info(chatuuid, chatname)

@@ -7,7 +7,7 @@ The p2p connection frontend
 from kademlia.network import Server
 import os
 import hashlib
-from twisted.internet.defer import inlineCallbacks
+from twisted.internet import defer
 import asyncio
 import json
 
@@ -62,7 +62,7 @@ class p2pConnection:
         # Auto resend to network or ask user to resend?
         return
 
-    @inlineCallbacks
+    @defer.inlineCallbacks
     def get(self, key):
         message = yield self.loop.run_until_complete(self.server.get(key))
         defer.returnValue(message)
