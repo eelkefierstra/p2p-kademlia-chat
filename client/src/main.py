@@ -18,7 +18,7 @@ This is the client for the p2p kademlia chat protocol
     help_port = "The port to connect to. Default to 1337."
     parser.add_argument('--port', type=int, help=help_port, default=1337)
     
-    help_port_p2p = "The port to connect to. Default to 8468." # Dynamic port range: 49152-65535
+    help_port_p2p = "The port to listen on for P2P connections. Default to 8468." # Dynamic port range: 49152-65535
     parser.add_argument('--port-p2p', type=int, help=help_port_p2p, default=8468)
 
     help_host = "The host to connect to."

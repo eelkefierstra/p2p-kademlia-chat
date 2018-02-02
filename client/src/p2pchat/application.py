@@ -71,8 +71,7 @@ class Application(ITrackerNotifier):
         return
     
     def get_chat_messages(self, chatuuid):
-        self.dbConn.get_chat_messages(chatuuid)
-        return
+        return self.dbConn.get_chat_messages(chatuuid)
     
     def send_chat_message(self, chat, message, chatUUID):
         try:

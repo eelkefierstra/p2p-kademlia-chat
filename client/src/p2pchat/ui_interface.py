@@ -135,7 +135,7 @@ class UIInterface(tk.Frame):
         if selected == ():
             return
         self.currentChat = self.chatListBox.get(selected)[0]
-        chatuuid = self.chat_uuid[selected]
+        chatuuid = self.chat_uuid[selected[0]]
         self.application.get_chat_messages(chatuuid).addCallback(self.refresh_chat_messages)
     
     def refresh_chat_list(self):
