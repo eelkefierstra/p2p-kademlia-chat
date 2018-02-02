@@ -81,6 +81,8 @@ class Application(ITrackerNotifier):
         # TODO sanity checks on chatname
         self.p2p.set_chat_info(chatuuid, chatname)
         self.dbConn.insert_new_chat(chatname, chatuuid)
+        self.gui.refresh_chat_list()
+        # Add chats to gui
 
     def on_message_sent(self, chatuuid, msg_hash):
         """

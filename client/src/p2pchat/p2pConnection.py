@@ -9,6 +9,7 @@ import os
 import hashlib
 from twisted.internet.defer import inlineCallbacks
 import asyncio
+import json
 
 
 class p2pConnection:
@@ -21,8 +22,8 @@ class p2pConnection:
             self.server = Server()
             self.server.listen(8468)  # Dynamic port range: 49152-65535
             
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
+            self.loop = asyncio.get_event_loop()
+            self.loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
         self.server.saveStateRegularly('cache.tmp', 10)
 
     def get_key(self, content):
@@ -38,7 +39,7 @@ class p2pConnection:
 
 
     def _send(self, key, message):
-        self.server.set(key, message).addErrback(self.sendFailed)  # TODO: handle error in setting message
+        self.loop.run_until_complete(self.server.set(key, message))  # TODO: handle error in setting message
 
     def send(self, message):
         key = self.get_key(message)

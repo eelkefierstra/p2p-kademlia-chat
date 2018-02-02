@@ -50,6 +50,7 @@ class dbConnection():
             self.dbpool.runOperation("INSERT INTO chats (chatName, chatUUID) VALUES (?,?)", [chatName, chatUUID])
         except:
             print('Error in inserting new chat')
+            # TODO actually work around the error
     
     def delete_chat(self,chatName, chatUUID):
         return self.dbpool.runOperation("DELETE FROM chats WHERE chatName=? AND chatUUID=?", [chatName, chatUUID])
