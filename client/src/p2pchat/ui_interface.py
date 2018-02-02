@@ -53,6 +53,7 @@ class UIInterface(tk.Frame):
 
         chatmenu = tk.Menu(self.menubar, tearoff=0)
         chatmenu.add_command(label='Create chat', command=self.create_chat_popup)
+        chatmenu.add_command(label='Join chat', command=self.join_chat_popup)
         chatmenu.add_command(label='Refresh chats', command=self.refresh_chat_list)
 
         self.menubar.add_cascade(label='Chats', menu=chatmenu)
@@ -72,10 +73,29 @@ class UIInterface(tk.Frame):
         createButton = tk.Button(topLevel, text='Create chat', command=lambda: self.create_chat_popup_action(textEntry.get(), topLevel))
         createButton.grid(row=2, column=0)
         return
+
+    def join_chat_popup(self):
+        join_chat_text = 'Enter the chat uuid'
+        top_level = tk.Toplevel()
+        label = tk.Label(top_level, text=join_chat_text)
+        label.grid(row=0, column=0)
+        
+        text_entry = tk.Entry(top_level)
+        text_entry.grid(row=1, column=0)
+        
+        join_button = tk.Button(top_level, text='Join chat', command=lambda: self.join_chat_popup_action(text_entry.get(), top_level))
+        join_button.grid(row=2, column=0)
+        return
+
+    def join_chat_popup_action(self, chatuuid, top_level):
+        self.application.join_chat(chatuuid)
+        #self.refresh_chat_list()
+        top_level.destroy()
+        return
     
     def create_chat_popup_action(self, chatName, toplevel):
         self.application.create_chat(chatName)
-        self.refresh_chat_list()
+        #self.refresh_chat_list()
         toplevel.destroy()
         return
 

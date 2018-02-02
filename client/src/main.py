@@ -15,14 +15,14 @@ This is the client for the p2p kademlia chat protocol
 
     parser = argparse.ArgumentParser(description=description)
 
-    helpPort = "The port to connect to. Default to 1337."
-    parser.add_argument('--port', type=int, help=helpPort, default=1337)
+    help_port = "The port to connect to. Default to 1337."
+    parser.add_argument('--port', type=int, help=help_port, default=1337)
     
-    helpPort_p2p = "The port to listen on for P2P connections. Default to 8468." # Dynamic port range: 49152-65535
-    parser.add_argument('--port-p2p', type=int, help=helpPort_p2p, default=8468)
+    help_port_p2p = "The port to connect to. Default to 8468." # Dynamic port range: 49152-65535
+    parser.add_argument('--port-p2p', type=int, help=help_port_p2p, default=8468)
 
-    helpHost = "The host to connect to."
-    parser.add_argument('--host', help=helpHost, default='127.0.0.1')
+    help_host = "The host to connect to."
+    parser.add_argument('--host', help=help_host, default='127.0.0.1')
 
     args = parser.parse_args()
     print(args)

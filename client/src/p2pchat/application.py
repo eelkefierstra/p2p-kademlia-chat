@@ -12,6 +12,7 @@ import queue
 
 
 class Application(ITrackerNotifier):
+
     def __init__(self, p2pObject, dbConnection):
         self.p2p = p2pObject
         #self.tracker = trackerclient
@@ -25,7 +26,6 @@ class Application(ITrackerNotifier):
         tksupport.install(root)
 
         self.chatinfoqueue = queue.Queue()
-        
 
     def set_trackerclient(self, trackerclient):
         self.tracker = trackerclient
@@ -33,12 +33,9 @@ class Application(ITrackerNotifier):
     def start(self):
         d = self.tracker.connect()
         d.addCallback(self.tracker_connected)
-
-
         
     def tracker_connected(self, proto):
         self.tracker_protocol = proto
-    
     
     def create_chat(self, chatname):
         print("Creating chat")
@@ -47,6 +44,25 @@ class Application(ITrackerNotifier):
         self.tracker_protocol.create_chat()
         #def chat_created(self, chatuuid):
         #    #TODO
+
+    def join_chat(self, chatuuid):
+        def got_chat_info(chatinfo):
+            print("Chat name: {}".format(chatinfo["name"]))
+            # TODO set chat with chatuuid to chatname chatinfo["name"]
+            # First join, download all messages
+            self.tracker_protocol.get_messages(chatuuid, 0)
+            chatuuids = [chatuuid]
+            # Request message push updates
+            self.tracker_protocol.receive_notifications(chatuuids)
+
+        d = self.p2p.get_chat_info(chatuuid)
+        d.addCallback(got_chat_info)
+
+        def no_chat_info(err):
+            print("failed to retrieve chat info: {}".format(err))
+        d.addErrback(no_chat_info)
+
+
     
     def remove_chat(self):
         messagehash = self.p2p.send('User left chat.')
@@ -78,8 +94,8 @@ class Application(ITrackerNotifier):
         Called when a chat is created
 
         """
-        print("Created chat: {}".format(chatuuid))
         # TODO set p2p info
+        print("Created chat with chatuuid: {}".format(chatuuid))
         chatname = self.chatinfoqueue.get()
         # TODO sanity checks on chatname
         self.p2p.set_chat_info(chatuuid, chatname)
