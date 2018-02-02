@@ -28,12 +28,12 @@ class TrackerClientProtocol(NetstringReceiver):
         # TODO use second callback instead
         self.write_json(createchat_json)
 
-    def request_push_notifications(self, chatuuids):
-        push_request_json = {
-            "action": "get_notified",
-            "chats": chatuuids
-        }
-        self.write_json(push_request_json)
+    #def request_push_notifications(self, chatuuids):
+    #    push_request_json = {
+    #        "action": "get_notified",
+    #        "chats": chatuuids
+    #    }
+    #    self.write_json(push_request_json)
 
     def send_message(self, chatuuid, msg_hash):
         sendmsg_json = {
