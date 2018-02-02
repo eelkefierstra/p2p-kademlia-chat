@@ -14,13 +14,13 @@ import json
 
 class p2pConnection:
 
-    def __init__(self, bootstrapAdres):
+    def __init__(self, bootstrapAdres, listenPort):
 
         if os.path.isfile('cache.tmp'):
             self.server = Server.loadState('cache.tmp')
         else:
             self.server = Server()
-            self.server.listen(8468)  # Dynamic port range: 49152-65535
+            self.server.listen(listenPort)
             
             self.loop = asyncio.get_event_loop()
             self.loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
