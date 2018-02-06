@@ -13,14 +13,10 @@ class p2pConnection(object):
     '''
 
     def __init__(self):
-        if os.path.isfile('cache.tmp'):
-            self.server = Server.loadState('cache.tmp')
-        else:
-            self.server = Server()
-            self.server.listen(8468)
-            self.loop = asyncio.get_event_loop()
-            reactor.callInThread(self.start_p2p_loop)
-        self.server.saveStateRegularly('cache.tmp', 10)
+        self.server = Server()
+        self.server.listen(8468)
+        self.loop = asyncio.get_event_loop()
+        reactor.callInThread(self.start_p2p_loop)
 
     def start_p2p_loop(self):
         self.loop.run_forever()
