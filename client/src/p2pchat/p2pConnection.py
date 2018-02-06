@@ -15,16 +15,11 @@ import json
 class p2pConnection:
 
     def __init__(self, bootstrapAdres, listenPort):
-
-        if os.path.isfile('cache.tmp'):
-            self.server = Server.loadState('cache.tmp')
-        else:
-            self.server = Server()
-            self.server.listen(listenPort)
-            
-            self.loop = asyncio.get_event_loop()
-            self.loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
-        self.server.saveStateRegularly('cache.tmp', 10)
+        self.server = Server()
+        self.server.listen(listenPort)
+        
+        self.loop = asyncio.get_event_loop()
+        self.loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
 
     def get_key(self, content):
         return hashlib.sha256(content).hexdigest()
@@ -69,6 +64,3 @@ class p2pConnection:
             # TODO: Could not get message from network, what now?
             return
         return message
-
-    def quit(self):
-        return
