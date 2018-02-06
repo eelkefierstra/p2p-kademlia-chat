@@ -16,7 +16,7 @@ class Application(ITrackerNotifier):
     def __init__(self, p2pObject, dbConnection):
         self.p2p = p2pObject
         #self.tracker = trackerclient
-        self.dbConn = dbConnection
+        self.db_conn = dbConnection
         
         root = Tk()
         # This fixes the reactor error on closing root window with the 'X' button
@@ -64,21 +64,21 @@ class Application(ITrackerNotifier):
 
 
     
-    def remove_chat(self):
+    def remove_chat(self, chatuuid):
         messagehash = self.p2p.send('User left chat.')
-        self.dbConn.deleteChat(chatName, chatUUID) # Who knows UUID??????????
+        self.db_conn.deleteChat(chatName, chatuuid)
         # TODO: Only send left chat message?
         return
     
     def get_chat_messages(self, chatuuid):
-        return self.dbConn.get_chat_messages(chatuuid)
+        return self.db_conn.get_chat_messages(chatuuid)
     
-    def send_chat_message(self, chat, message, chatUUID):
+    def send_chat_message(self,  chatuuid, message):
         try:
-            messageStr = str(message)
-            messagehash = self.p2p.send(messageStr)
-            # TODO: send message hash to tracker
-            self.dbConn.insertMessage(messagehash, messageStr)
+            message_str = str(message)
+            messagehash = self.p2p.send(message_str)
+            self.tracker_protocol.send_message(chatuuid, messagehash)
+            self.db_conn.insertMessage(messagehash, message_str)
         except:
             # Could not make a string from message input
             # If you get here, you done something very wrong!!!
@@ -86,7 +86,7 @@ class Application(ITrackerNotifier):
         return
     
     def get_chat_list(self):
-        return self.dbConn.get_chat_list()
+        return self.db_conn.get_chat_list()
 
     def on_chat_created(self, chatuuid):
         """
@@ -98,7 +98,7 @@ class Application(ITrackerNotifier):
         chatname = self.chatinfoqueue.get()
         # TODO sanity checks on chatname
         self.p2p.set_chat_info(chatuuid, chatname)
-        self.dbConn.insert_new_chat(chatname, chatuuid)
+        self.db_conn.insert_new_chat(chatname, chatuuid)
         self.gui.refresh_chat_list()
 
     def on_message_sent(self, chatuuid, msg_hash):
@@ -117,10 +117,12 @@ class Application(ITrackerNotifier):
             message_hash = message['hash']
             message_time = message['time']
             message_content = self.p2p.get(message_hash)
-            self.dbConn.insert_message(message_hash, message_content, message_time, chatuuid)
+            self.db_conn.insert_message(message_hash, message_content, message_time, chatuuid)
 
     def on_message_received(self, chatuuid, msg_hash, time_sent):
         """
         Called when a message is pushed by the tracker
         """
         print("Received message : {} {} {}".format(chatuuid, msg_hash, time_sent))
+        message_content = self.p2p.get(msg_hash)
+        self.db_conn.insert_message(msg_hash, message_content, time_sent, chatuuid)

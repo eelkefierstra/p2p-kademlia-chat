@@ -13,7 +13,7 @@ import random
 class UIInterface(tk.Frame):
     def __init__(self, master, application):
         self.application = application
-        self.chatListLabels = []
+        self.chat_list_labels = []
         self.chat_uuid = []
         
         tk.Frame.__init__(self, master)
@@ -31,18 +31,18 @@ class UIInterface(tk.Frame):
         # Create Menubar
         self.create_menubar()
         # Build the chat listing
-        self.chatList = tk.Frame(self)
-        self.chatList.grid(row=0, column=0)
+        self.chat_list = tk.Frame(self)
+        self.chat_list.grid(row=0, column=0)
 
-        self.chatScroll = tk.Scrollbar(self.chatList, orient=tk.VERTICAL)
-        self.chatScroll.grid(row=0, column=1, sticky=tk.N+tk.S)
-        self.chatListBox = tk.Listbox(self.chatList, yscrollcommand=self.chatScroll.set)
-        self.chatListBox.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
-        self.chatListBox.activate(0)
+        self.chat_scroll = tk.Scrollbar(self.chat_list, orient=tk.VERTICAL)
+        self.chat_scroll.grid(row=0, column=1, sticky=tk.N+tk.S)
+        self.chat_list_box = tk.Listbox(self.chat_list, yscrollcommand=self.chat_scroll.set)
+        self.chat_list_box.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
+        self.chat_list_box.activate(0)
         self.change_chat() # Initiate program on first chat
-        self.chatScroll['command'] = self.chatListBox.yview
-        self.chatListButton = tk.Button(self.chatList, text='Select chat', command=self.change_chat)
-        self.chatListButton.grid(row=1, column=0, columnspan=2, sticky=tk.E+tk.W)
+        self.chat_scroll['command'] = self.chat_list_box.yview
+        self.chat_list_button = tk.Button(self.chat_list, text='Select chat', command=self.change_chat)
+        self.chat_list_button.grid(row=1, column=0, columnspan=2, sticky=tk.E+tk.W)
 
         # Build the chat message view
         self.configure_chatmessage_list()
@@ -62,16 +62,16 @@ class UIInterface(tk.Frame):
         return
     
     def create_chat_popup(self):
-        createChatText = 'Enter name for new chat:'
-        topLevel = tk.Toplevel()
-        label = tk.Label(topLevel, text=createChatText)
+        create_chat_text = 'Enter name for new chat:'
+        top_level = tk.Toplevel()
+        label = tk.Label(top_level, text=create_chat_text)
         label.grid(row=0, column=0)
         
-        textEntry = tk.Entry(topLevel)
-        textEntry.grid(row=1, column=0)
+        text_entry_new_chat = tk.Entry(top_level)
+        text_entry_new_chat.grid(row=1, column=0)
         
-        createButton = tk.Button(topLevel, text='Create chat', command=lambda: self.create_chat_popup_action(textEntry.get(), topLevel))
-        createButton.grid(row=2, column=0)
+        create_chat_button = tk.Button(top_level, text='Create chat', command=lambda: self.create_chat_popup_action(text_entry_new_chat.get(), top_level))
+        create_chat_button.grid(row=2, column=0)
         return
 
     def join_chat_popup(self):
@@ -100,53 +100,53 @@ class UIInterface(tk.Frame):
         return
 
     def configure_chatmessage_list(self):
-        self.chatView = tk.Frame(self)
-        self.chatView.grid(row=0, column=1, sticky=tk.N+tk.E+tk.S+tk.W)
+        self.chat_view = tk.Frame(self)
+        self.chat_view.grid(row=0, column=1, sticky=tk.N+tk.E+tk.S+tk.W)
 
-        self.chatMessageCanvas = tk.Canvas(self.chatView, borderwidth=0, background='#fff')
-        self.chatMessageFrame = tk.Frame(self.chatMessageCanvas, background='#fff')
-        self.chatMessageScroll = tk.Scrollbar(self.chatView, orient='vertical', command=self.chatMessageCanvas.yview)
-        self.chatMessageCanvas.configure(yscrollcommand=self.chatMessageScroll.set)
+        self.chat_messages_canvas = tk.Canvas(self.chat_view, borderwidth=0, background='#fff')
+        self.chat_messages_frame = tk.Frame(self.chat_messages_canvas, background='#fff')
+        self.chat_messages_scroll = tk.Scrollbar(self.chat_view, orient='vertical', command=self.chat_messages_canvas.yview)
+        self.chat_messages_canvas.configure(yscrollcommand=self.chat_messages_scroll.set)
 
-        self.chatMessageScroll.grid(row=0, column=2, sticky=tk.N+tk.S)
-        self.chatMessageCanvas.grid(row=0, column=0, sticky=tk.N+tk.E+tk.S+tk.W, columnspan=2)
-        self.chatMessageCanvas.create_window(4, 4, window=self.chatMessageFrame, anchor=tk.NE, tags='self.chatMessageFrame')
+        self.chat_messages_scroll.grid(row=0, column=2, sticky=tk.N+tk.S)
+        self.chat_messages_canvas.grid(row=0, column=0, sticky=tk.N+tk.E+tk.S+tk.W, columnspan=2)
+        self.chat_messages_canvas.create_window(4, 4, window=self.chat_messages_frame, anchor=tk.NE, tags='self.chat_messages_frame')
 
-        self.chatMessageFrame.bind('<Configure>', self.on_frame_configure)
+        self.chat_messages_frame.bind('<Configure>', self.on_frame_configure)
         # self.application.get_chat_messages(self.chat_uuid[0]).addCallback(self.refresh_chat_messages)
 
-        self.chatMessageEntry = tk.Entry(self.chatView)
-        self.chatMessageEntry.grid(row=1, column=0, sticky=tk.W+tk.E)
-        self.chatMessageButtonSend = tk.Button(self.chatView, text='Send', command=self.send_chat_message)
-        self.chatMessageButtonSend.grid(row=1, column=1)
+        self.chat_message_entry = tk.Entry(self.chat_view)
+        self.chat_message_entry.grid(row=1, column=0, sticky=tk.W+tk.E)
+        self.chat_message_button_send = tk.Button(self.chat_view, text='Send', command=self.send_chat_message)
+        self.chat_message_button_send.grid(row=1, column=1)
     
     def send_chat_message(self):
-        chatMessage = self.chatMessageEntry.get()
-        self.application.send_chat_message(self.currentChat, chatMessage)
-        self.chatMessageEntry.delete(0, len(chatMessage))
+        chat_message = self.chat_message_entry.get()
+        self.application.send_chat_message(self.current_chatuuid, chat_message)
+        self.chat_message_entry.delete(0, len(chat_message))
         return
 
     def add_chat(self, chatName, chatuuid):
-        self.chatListBox.insert(tk.END, chatName)
+        self.chat_list_box.insert(tk.END, chatName)
         self.chat_uuid.append(chatuuid)
 
     def change_chat(self):
-        selected = self.chatListBox.curselection()
+        selected = self.chat_list_box.curselection()
         if selected == ():
             return
-        self.currentChat = self.chatListBox.get(selected)[0]
+        self.current_chatuuid = self.chat_uuid[selected[0]]
         chatuuid = self.chat_uuid[selected[0]]
         self.application.get_chat_messages(chatuuid).addCallback(self.refresh_chat_messages)
     
     def refresh_chat_list(self):
         self.application.get_chat_list().addCallback(self._refresh_chat_list)
         
-    def _refresh_chat_list(self, chatList):
-        if chatList:
-            chatListBoxLength = self.chatListBox.size()
-            self.chatListBox.delete(0, chatListBoxLength-1)
+    def _refresh_chat_list(self, chat_list):
+        if chat_list:
+            chat_list_box_length = self.chat_list_box.size()
+            self.chat_list_box.delete(0, chat_list_box_length-1)
             self.chat_uuid = []
-            for chat in chatList:
+            for chat in chat_list:
                 self.add_chat(chat[0], chat[1])
             return
         else:
@@ -156,15 +156,15 @@ class UIInterface(tk.Frame):
     def refresh_chat_messages(self, chat_messages):
         '''Put in some fake data'''
         # TODO: get real chat messages to show up
-        for label in self.chatListLabels:
+        for label in self.chat_list_labels:
             label.destroy()
         
         for result_row in chat_messages:
             message = result_row[0]
-            chatMessageLabel = tk.Label(self.chatMessageFrame, text=message)
-            chatMessageLabel.grid(row=0, column=0)
-            self.chatListLabels.append(chatMessageLabel)
+            chat_message_label = tk.Label(self.chat_messages_frame, text=message)
+            chat_message_label.grid(row=0, column=0)
+            self.chat_list_labels.append(chat_message_label)
 
     def on_frame_configure(self, event):
         '''Reset the scroll region to encompass the inner frame'''
-        self.chatMessageCanvas.configure(scrollregion=self.chatMessageCanvas.bbox("all"))
+        self.chat_messages_canvas.configure(scrollregion=self.chat_messages_canvas.bbox("all"))
