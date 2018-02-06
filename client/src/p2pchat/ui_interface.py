@@ -154,8 +154,6 @@ class UIInterface(tk.Frame):
             return
 
     def refresh_chat_messages(self, chat_messages):
-        '''Put in some fake data'''
-        # TODO: get real chat messages to show up
         for label in self.chat_list_labels:
             label.destroy()
         

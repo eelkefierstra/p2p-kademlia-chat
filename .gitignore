@@ -110,3 +110,6 @@ ENV/
 #pydev project information
 .project
 .pydevproject
+
+#kademlia cahce files
+cache.tmp
