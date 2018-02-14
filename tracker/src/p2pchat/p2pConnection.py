@@ -1,7 +1,6 @@
 '''
 @author: Eelke
 '''
-import os
 from kademlia.network import Server
 from twisted.internet import reactor
 import asyncio
