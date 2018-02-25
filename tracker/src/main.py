@@ -2,7 +2,7 @@
 
 import os
 import argparse
-import p2pchat.p2pConnection
+from p2pchat.p2p_connection import P2PConnection
 from p2pchat.tracker import Tracker
 from p2pchat.database import P2PChatDB
 
@@ -46,8 +46,11 @@ This is the tracker server for the p2p kademlia chat protocol.
 if __name__ == "__main__":
     args = parse_args()
 
-    p2pServer = p2pchat.p2pConnection.p2pConnection()
+    p2pServer = P2PConnection()
     db = P2PChatDB(args.dbhost, args.dbport, args.dbprivkey, args.dbcert)
     db.connect()
     tracker = Tracker(args.iface, args.port, db)
-    tracker.start()
+
+    from twisted.internet import reactor
+    tracker.start(reactor)
+    reactor.run()

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
-import p2pchat.trackerclient
-import p2pchat.p2pConnection
+from p2pchat.trackerclient import TrackerClient
+from p2pchat.p2p_connection import P2PConnection
 from p2pchat.application import Application
-import p2pchat.dbConnection
+from p2pchat.db_connection import DBConnection
 from twisted.internet import reactor
 
 
@@ -33,12 +33,12 @@ This is the client for the p2p kademlia chat protocol
 def main():
     args = parse_args()
 
-    p2p = p2pchat.p2pConnection.p2pConnection(args.host, args.port_p2p)
-    dbConn = p2pchat.dbConnection.dbConnection()
+    p2p = P2PConnection(args.host, args.port_p2p)
+    dbConn = DBConnection()
 
     app = Application(p2p, dbConn)
 
-    trackerclient = p2pchat.trackerclient.TrackerClient(args.host, args.port, notifier=app)
+    trackerclient = TrackerClient(args.host, args.port, notifier=app)
 
     app.set_trackerclient(trackerclient)
 

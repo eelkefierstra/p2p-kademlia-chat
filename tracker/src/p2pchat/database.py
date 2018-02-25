@@ -3,7 +3,7 @@
 import time
 from OpenSSL import SSL
 from txmongo.connection import ConnectionPool
-from twisted.internet import defer, reactor, ssl
+from twisted.internet import defer, ssl
 
 
 class P2PChatDB(object):

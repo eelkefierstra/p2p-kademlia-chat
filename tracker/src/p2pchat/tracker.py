@@ -168,10 +168,8 @@ class Tracker:
         self.port = port
         self.db = db
 
-    def start(self):
+    def start(self, reactor):
         factory = TrackerFactory(self.db)
 
-        from twisted.internet import reactor
         # TODO load these values from a config file?
         port = reactor.listenTCP(self.port, factory, interface=self.interface)
-        reactor.run()

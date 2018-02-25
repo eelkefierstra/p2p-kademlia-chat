@@ -7,7 +7,7 @@ Connection to local sqlite DB
 from twisted.enterprise import adbapi
 
 
-class dbConnection():
+class DBConnection():
     def __init__(self):
         self.dbpool = adbapi.ConnectionPool('sqlite3', 'storage.db', check_same_thread=False)
         self.check_table_existence('chats').addCallback(self.init_tables)

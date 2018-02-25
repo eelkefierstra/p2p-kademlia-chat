@@ -12,7 +12,7 @@ import asyncio
 import json
 
 
-class p2pConnection:
+class P2PConnection:
 
     def __init__(self, bootstrapAdres, listenPort):
         self.server = Server()

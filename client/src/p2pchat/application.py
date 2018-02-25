@@ -33,9 +33,17 @@ class Application(ITrackerNotifier):
     def start(self):
         d = self.tracker.connect()
         d.addCallback(self.tracker_connected)
+        d.addErrback(self.tracker_unavailable)
         
     def tracker_connected(self, proto):
         self.tracker_protocol = proto
+
+    def tracker_unavailable(self, err):
+        # TODO popup instead of print
+        if type(err) == twisted.internet.error.ConnectionRefusedError:
+            print("The tracker is currently unavailable, try again later.");
+        reactor.stop()
+
     
     def create_chat(self, chatname):
         print("Creating chat")

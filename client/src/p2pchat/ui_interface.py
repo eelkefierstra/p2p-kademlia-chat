@@ -139,7 +139,8 @@ class UIInterface(tk.Frame):
         self.application.get_chat_messages(chatuuid).addCallback(self.refresh_chat_messages)
     
     def refresh_chat_list(self):
-        self.application.get_chat_list().addCallback(self._refresh_chat_list)
+        d = self.application.get_chat_list()
+        d.addCallback(self._refresh_chat_list)
         
     def _refresh_chat_list(self, chat_list):
         if chat_list:
@@ -149,9 +150,9 @@ class UIInterface(tk.Frame):
             for chat in chat_list:
                 self.add_chat(chat[0], chat[1])
             return
-        else:
-            self.add_chat('*None*', '')
-            return
+        #else:
+        #    self.add_chat('*None*', '')
+        #    return
 
     def refresh_chat_messages(self, chat_messages):
         for label in self.chat_list_labels:
