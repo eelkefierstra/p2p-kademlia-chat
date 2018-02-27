@@ -14,7 +14,7 @@ class UIInterface(tk.Frame):
     def __init__(self, master, application):
         self.application = application
         self.chat_list_labels = []
-        self.chat_uuid = []
+        self.chat_uuid_list = []
         
         tk.Frame.__init__(self, master)
         top = self.winfo_toplevel()
@@ -85,6 +85,8 @@ class UIInterface(tk.Frame):
         
         join_button = tk.Button(top_level, text='Join chat', command=lambda: self.join_chat_popup_action(text_entry.get(), top_level))
         join_button.grid(row=2, column=0)
+        
+        text_entry.focus_force()
         return
 
     def join_chat_popup_action(self, chatuuid, top_level):
@@ -113,7 +115,7 @@ class UIInterface(tk.Frame):
         self.chat_messages_canvas.create_window(4, 4, window=self.chat_messages_frame, anchor=tk.NE, tags='self.chat_messages_frame')
 
         self.chat_messages_frame.bind('<Configure>', self.on_frame_configure)
-        # self.application.get_chat_messages(self.chat_uuid[0]).addCallback(self.refresh_chat_messages)
+        # self.application.get_chat_messages(self.chat_uuid_list[0]).addCallback(self.refresh_chat_messages)
 
         self.chat_message_entry = tk.Entry(self.chat_view)
         self.chat_message_entry.grid(row=1, column=0, sticky=tk.W+tk.E)
@@ -128,15 +130,20 @@ class UIInterface(tk.Frame):
 
     def add_chat(self, chatName, chatuuid):
         self.chat_list_box.insert(tk.END, chatName)
-        self.chat_uuid.append(chatuuid)
+        self.chat_uuid_list.append(chatuuid)
 
     def change_chat(self):
         selected = self.chat_list_box.curselection()
         if selected == ():
             return
-        self.current_chatuuid = self.chat_uuid[selected[0]]
-        chatuuid = self.chat_uuid[selected[0]]
-        self.application.get_chat_messages(chatuuid).addCallback(self.refresh_chat_messages)
+        chat_number = selected[0]
+        chat_uuid = self.chat_uuid_list[chat_number]
+        chat_name = self.chat_list_box.get(chat_number)
+        self.current_chatuuid = chat_uuid
+        print("Current chat: {}; current chatUUID: {}".format(chat_name, chat_uuid))
+        self.application.get_chat_messages(chat_uuid).addCallback(self.refresh_chat_messages)
+        
+        self.chat_message_entry.focus_force()
     
     def refresh_chat_list(self):
         d = self.application.get_chat_list()
@@ -146,7 +153,7 @@ class UIInterface(tk.Frame):
         if chat_list:
             chat_list_box_length = self.chat_list_box.size()
             self.chat_list_box.delete(0, chat_list_box_length-1)
-            self.chat_uuid = []
+            self.chat_uuid_list = []
             for chat in chat_list:
                 self.add_chat(chat[0], chat[1])
             return

@@ -81,13 +81,19 @@ class Application(ITrackerNotifier):
     def get_chat_messages(self, chatuuid):
         return self.db_conn.get_chat_messages(chatuuid)
     
-    def send_chat_message(self,  chatuuid, message):
+    def send_chat_message(self,  chat_uuid, message):
+        print("Start sending message: '{}'".format(message))
         try:
             message_str = str(message)
+            print("Start sending message to P2P-network")
             messagehash = self.p2p.send(message_str)
-            self.tracker_protocol.send_message(chatuuid, messagehash)
+            print("Message stored in P2P-network")
+            self.tracker_protocol.send_message(chat_uuid, messagehash)
+            print("Message send to tracker")
             self.db_conn.insertMessage(messagehash, message_str)
-        except:
+            print("Message stored in DB")
+            print("Done with message: '{}' in chat: {}".format(message_str, chat_uuid))
+        except Exception:
             # Could not make a string from message input
             # If you get here, you done something very wrong!!!
             pass

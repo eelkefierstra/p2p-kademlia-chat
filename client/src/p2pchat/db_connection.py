@@ -34,7 +34,8 @@ class DBConnection():
     # Returns list of all connected chats
     def get_chat_list(self):
         try:
-            return self.dbpool.runInteraction(self._get_chat_list)
+            d = self.dbpool.runInteraction(self._get_chat_list)
+            return d
         except:
             return None
     
@@ -42,13 +43,16 @@ class DBConnection():
         txn.execute("SELECT chatName, chatuuid FROM chats")
         result = txn.fetchall()
         if result:
-            return [(chat[0], chat[1]) for chat in result]
+            info = [(chat[0], chat[1]) for chat in result]
+            print("Got chats from DB: {}".format(info))
+            return info
         else:
             return None
     
     def insert_new_chat(self, chatName, chatuuid):
         try:
             self.dbpool.runOperation("INSERT INTO chats (chatName, chatuuid) VALUES (?,?)", [chatName, chatuuid])
+            print("Stored chat with chatuuid: {} and name: {} in DB".format(chatuuid, chatName))
         except:
             print('Error in inserting new chat')
             # TODO actually work around the error
