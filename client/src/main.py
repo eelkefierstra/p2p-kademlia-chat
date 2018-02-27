@@ -5,7 +5,6 @@ from p2pchat.trackerclient import TrackerClient
 from p2pchat.p2p_connection import P2PConnection
 from p2pchat.application import Application
 from p2pchat.db_connection import DBConnection
-from twisted.internet import reactor
 
 
 def parse_args():
@@ -45,6 +44,7 @@ def main():
     app.start()
     # TODO: get p2p bootstrapaddresses
 
+    from twisted.internet import reactor
     reactor.run()
 
 
