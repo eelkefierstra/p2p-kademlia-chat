@@ -141,7 +141,7 @@ class UIInterface(tk.Frame):
         chat_name = self.chat_list_box.get(chat_number)
         self.current_chatuuid = chat_uuid
         print("Current chat: {}; current chatUUID: {}".format(chat_name, chat_uuid))
-        self.application.get_chat_messages(chat_uuid).addCallback(self.refresh_chat_messages)
+        self.refresh_chat_messages()
         
         self.chat_message_entry.focus_force()
     
@@ -161,7 +161,10 @@ class UIInterface(tk.Frame):
         #    self.add_chat('*None*', '')
         #    return
 
-    def refresh_chat_messages(self, chat_messages):
+    def refresh_chat_messages(self):
+        self.application.get_chat_messages(self.current_chatuuid).addCallback(self._refresh_chat_messages)
+
+    def _refresh_chat_messages(self, chat_messages):
         for label in self.chat_list_labels:
             label.destroy()
         

@@ -127,6 +127,8 @@ class Application(ITrackerNotifier):
             message_time = message['time']
             message_content = self.p2p.get(message_hash)
             self.db_conn.insert_message(message_hash, message_content, message_time, chatuuid)
+            
+        self.gui.refresh_chat_messages()
 
     def on_message_received(self, chatuuid, msg_hash, time_sent):
         """
@@ -135,3 +137,5 @@ class Application(ITrackerNotifier):
         print("Received message from tracker: {} {} {}".format(chatuuid, msg_hash, time_sent))
         message_content = self.p2p.get(msg_hash)
         self.db_conn.insert_message(msg_hash, message_content, time_sent, chatuuid)
+        
+        self.gui.refresh_chat_messages()
