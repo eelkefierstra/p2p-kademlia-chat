@@ -66,27 +66,27 @@ class DBConnection():
     def get_chat_messages(self, chatuuid):
         return self.dbpool.runQuery("SELECT m.chatContent FROM p2pMessageInfo AS p, messages AS m WHERE p.chatuuid=? AND p.chatHash=m.chatHash ORDER BY p.timeSend ASC", [chatuuid])
     
-    def insert_message(self, messageHash, messageContent, messageTime):
+    def insert_message(self, message_hash, message_content, message_time, chat_uuid):
         # Check if message already stored
-        return self.dbpool.runInteraction(self._insert_message, messageHash, messageContent, messageTime)
+        return self.dbpool.runInteraction(self._insert_message, message_hash, message_content, message_time, chat_uuid)
     
-    def _insert_message(self, txn, messageHash, messageContent, messageTime, chatuuid):
-        txn.execute("SELECT 1 FROM p2pMessageInfo WHERE messageHash=? AND timeSend=? AND chatuuid=?", [messageHash, messageTime, chatuuid])
+    def _insert_message(self, txn, message_hash, message_content, message_time, chat_uuid):
+        txn.execute("SELECT 1 FROM p2pMessageInfo WHERE messageHash=? AND timeSend=? AND chatuuid=?", [message_hash, message_time, chat_uuid])
         result = txn.fetchAll()
         if result:
             # This message send at this time is already saved, no point in doubling it
             return
         else:
-            txn.execute("INSERT INTO p2pMessageInfo (?, ?, ?)", [messageHash, messageTime, chatuuid])
+            txn.execute("INSERT INTO p2pMessageInfo (?, ?, ?)", [message_hash, message_time, chat_uuid])
             
             # If content not yet stored store that in DB
-            txn.execute("SELECT 1 FROM messages WHERE messageHash=?", [messageHash])
+            txn.execute("SELECT 1 FROM messages WHERE messageHash=?", [message_hash])
             result = txn.fetchAll()
             if result:
                 # Content is already saved, continue
                 return
             else:
-                txn.execute("INSERT INTO messages (?, ?)", [messageHash, messageContent])
+                txn.execute("INSERT INTO messages (?, ?)", [message_hash, message_content])
         return
     
     def __del__(self):

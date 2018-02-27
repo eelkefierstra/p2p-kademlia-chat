@@ -85,14 +85,9 @@ class Application(ITrackerNotifier):
         print("Start sending message: '{}'".format(message))
         try:
             message_str = str(message)
-            print("Start sending message to P2P-network")
             messagehash = self.p2p.send(message_str)
             print("Message stored in P2P-network")
             self.tracker_protocol.send_message(chat_uuid, messagehash)
-            print("Message send to tracker")
-            self.db_conn.insertMessage(messagehash, message_str)
-            print("Message stored in DB")
-            print("Done with message: '{}' in chat: {}".format(message_str, chat_uuid))
         except Exception:
             # Could not make a string from message input
             # If you get here, you done something very wrong!!!
@@ -108,7 +103,7 @@ class Application(ITrackerNotifier):
 
         """
         # TODO set p2p info
-        print("Created chat with chatuuid: {}".format(chatuuid))
+        print("Created chat on tracker with chatuuid: {}".format(chatuuid))
         chatname = self.chatinfoqueue.get()
         # TODO sanity checks on chatname
         self.p2p.set_chat_info(chatuuid, chatname)
@@ -119,13 +114,13 @@ class Application(ITrackerNotifier):
         """
         Called when a message is sent to the tracker
         """
-        print("Message sent: {} {}".format(chatuuid, msg_hash))
+        print("Message sent to tracker: {};{}".format(chatuuid, msg_hash))
 
     def on_messages_received(self, chatuuid, fromtime, tilltime, messages):
         """
         Called when messages are received from the tracker
         """
-        print("Messages received: {} {} {} {}".format(chatuuid, fromtime, tilltime, messages))
+        print("Messages received from tracker: {} {} {} {}".format(chatuuid, fromtime, tilltime, messages))
         
         for message in messages:
             message_hash = message['hash']
@@ -137,6 +132,6 @@ class Application(ITrackerNotifier):
         """
         Called when a message is pushed by the tracker
         """
-        print("Received message : {} {} {}".format(chatuuid, msg_hash, time_sent))
+        print("Received message from tracker: {} {} {}".format(chatuuid, msg_hash, time_sent))
         message_content = self.p2p.get(msg_hash)
         self.db_conn.insert_message(msg_hash, message_content, time_sent, chatuuid)

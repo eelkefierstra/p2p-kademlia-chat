@@ -7,11 +7,8 @@ The p2p connection frontend
 from kademlia.network import Server
 import os
 import hashlib
-from twisted.internet import asyncioreactor, defer
 import asyncio
 import json
-loop = asyncio.get_event_loop()
-asyncioreactor.install(eventloop=loop)
 
 
 class P2PConnection:
@@ -20,10 +17,11 @@ class P2PConnection:
         self.server = Server()
         self.server.listen(listenPort)
         
-        self.server.bootstrap([(bootstrapAdres, 8468)])
+        self.loop = asyncio.get_event_loop()
+        self.loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
 
     def get_key(self, content):
-        return hashlib.sha256(content).hexdigest()
+        return hashlib.sha256(str.encode(content)).hexdigest()
 
     def set_chat_info(self, chatuuid, groupname):
         chat_info = {
@@ -47,7 +45,7 @@ class P2PConnection:
         return d
 
     def _send(self, key, data):
-        self.server.set(key, data)  # TODO: handle error in setting message
+        self.loop.run_until_complete(self.server.set(key, data))  # TODO: handle error in setting message
         print("Stored key:'{}' in P2P-network".format(key))
 
     def send(self, message):
@@ -61,7 +59,7 @@ class P2PConnection:
 
     def get(self, key):
         try:
-            message = self.server.get(key)
+            message = self.loop.run_until_complete(self.server.get(key))
         except:
             # TODO: Could not get message from network, what now?
             return
