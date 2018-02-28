@@ -7,7 +7,6 @@ The p2p tracker client
 from twisted.internet.protocol import ClientFactory
 from twisted.protocols.basic import NetstringReceiver
 from twisted.internet.endpoints import TCP4ClientEndpoint
-from twisted.internet import reactor
 import json
 
 
@@ -154,6 +153,7 @@ class TrackerClient:
         self.factory = TrackerClientFactory(notifier)
 
     def connect(self):
+        from twisted.internet import reactor
         endpoint = TCP4ClientEndpoint(reactor, self.host, self.port)
         return endpoint.connect(self.factory)
 

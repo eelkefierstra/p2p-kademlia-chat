@@ -5,8 +5,6 @@ The GUI for the chat application
 '''
 
 import tkinter as tk
-from twisted.internet import reactor
-from twisted.internet.task import react
 import random
 
 

@@ -7,7 +7,7 @@ from twisted.internet.defer import inlineCallbacks
 from p2pchat.trackerclient import ITrackerNotifier
 from p2pchat.ui_interface import UIInterface
 from tkinter import *
-from twisted.internet import tksupport, reactor
+from twisted.internet import tksupport
 import queue
 
 
@@ -20,6 +20,7 @@ class Application(ITrackerNotifier):
         
         root = Tk()
         # This fixes the reactor error on closing root window with the 'X' button
+        from twisted.internet import reactor
         root.protocol("WM_DELETE_WINDOW", reactor.stop)
         self.gui = UIInterface(root, self)
         self.gui.master.title('Independed chat')
@@ -42,6 +43,8 @@ class Application(ITrackerNotifier):
         # TODO popup instead of print
         if type(err) == twisted.internet.error.ConnectionRefusedError:
             print("The tracker is currently unavailable, try again later.");
+        
+        from twisted.internet import reactor
         reactor.stop()
 
     
