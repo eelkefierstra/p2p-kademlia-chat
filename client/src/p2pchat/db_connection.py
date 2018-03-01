@@ -24,8 +24,8 @@ class DBConnection():
             try:
                 # table does not exist, so we should create it
                 self.dbpool.runOperation("CREATE TABLE chats (id INTEGER PRIMARY KEY, chatName text, chatuuid text)")
-                self.dbpool.runOperation("CREATE TABLE messages (chatHash text, chatContent text)")
-                self.dbpool.runOperation("CREATE TABLE p2pMessageInfo (id INTEGER PRIMARY KEY, chatHash text, timeSend real, chatuuid text)")
+                self.dbpool.runOperation("CREATE TABLE messages (messageHash text, chatContent text)")
+                self.dbpool.runOperation("CREATE TABLE p2pMessageInfo (id INTEGER PRIMARY KEY, messageHash text, timeSend real, chatuuid text)")
             except:
                 print('Error in creating tables')
                 raise 'Database table creation error'
@@ -64,7 +64,7 @@ class DBConnection():
         return self.dbpool.runQuery("SELECT messageContent FROM messages WHERE messageHash=?", [messageHash])
     
     def get_chat_messages(self, chatuuid):
-        return self.dbpool.runQuery("SELECT m.chatContent FROM p2pMessageInfo AS p, messages AS m WHERE p.chatuuid=? AND p.chatHash=m.chatHash ORDER BY p.timeSend ASC", [chatuuid])
+        return self.dbpool.runQuery("SELECT m.chatContent FROM p2pMessageInfo AS p, messages AS m WHERE p.chatuuid=? AND p.messageHash=m.messageHash ORDER BY p.timeSend ASC", [chatuuid])
     
     def insert_message(self, message_hash, message_content, message_time, chat_uuid):
         # Check if message already stored
@@ -72,21 +72,22 @@ class DBConnection():
     
     def _insert_message(self, txn, message_hash, message_content, message_time, chat_uuid):
         txn.execute("SELECT 1 FROM p2pMessageInfo WHERE messageHash=? AND timeSend=? AND chatuuid=?", [message_hash, message_time, chat_uuid])
-        result = txn.fetchAll()
+        result = txn.fetchall()
         if result:
             # This message send at this time is already saved, no point in doubling it
             return
         else:
-            txn.execute("INSERT INTO p2pMessageInfo (?, ?, ?)", [message_hash, message_time, chat_uuid])
-            
+            txn.execute("INSERT INTO p2pMessageInfo (messageHash, timeSend, chatuuid)  VALUES (?, ?, ?)", (message_hash, message_time, chat_uuid))
+            print("Message added to DB")
             # If content not yet stored store that in DB
             txn.execute("SELECT 1 FROM messages WHERE messageHash=?", [message_hash])
-            result = txn.fetchAll()
+            result = txn.fetchall()
             if result:
                 # Content is already saved, continue
                 return
             else:
-                txn.execute("INSERT INTO messages (?, ?)", [message_hash, message_content])
+                txn.execute("INSERT INTO messages (messageHash, chatContent) VALUES (?, ?)", [message_hash, message_content])
+                print("Message content added to DB")
         return
     
     def __del__(self):

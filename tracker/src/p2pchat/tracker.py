@@ -8,9 +8,7 @@ import json
 import uuid
 import datetime
 import time
-import hashlib
-from twisted.internet import defer
-from twisted.internet.protocol import ServerFactory, Protocol
+from twisted.internet.protocol import ServerFactory
 from twisted.protocols.basic import NetstringReceiver
 from p2pchat.database import P2PChatDB
 
@@ -31,12 +29,15 @@ class TrackerProtocol(NetstringReceiver):
                 "action": "createdchat",
                 "chatuuid": chatuuid
             }
+            print("Chat created, notifying client")
             self.write_json(chatresponse_json)
 
+        print("Creating new chat with uuid: {}".format(chatuuid))
         d = self.db.create_chat(chatuuid)
         d.addCallback(write_created_chat)
 
     def send_message(self, msg_json):
+        print("New message received")
         # TODO keyerror
         chatuuid = msg_json["chatuuid"]
         msg_hash = msg_json["msg_hash"]
@@ -47,8 +48,10 @@ class TrackerProtocol(NetstringReceiver):
             sendmsg_json = {
                 "action": "sentmessage",
                 "chatuuid": chatuuid,
-                "msg_hash": msg_hash
+                "msg_hash": msg_hash,
+                "time_sent": timesent_ts
             }
+            print("New message stored in DB, notifying client")
             self.write_json(sendmsg_json)
 
         d = self.db.store_message(chatuuid, msg_hash, timesent)
@@ -73,7 +76,8 @@ class TrackerProtocol(NetstringReceiver):
                 "time_sent": time_sent
             }
         self.write_json(chatmsg_json)
-        
+        print("Push notificatio new message send")
+
     """
     Get the messages from fromtime till tilltime
     """
@@ -116,12 +120,11 @@ class TrackerProtocol(NetstringReceiver):
         self.sendString(response.encode('utf-8'))
 
     def connectionMade(self):
-    #    #self.factory.protocols.append(self)
+        # self.factory.protocols.append(self)
         ip_addr = self.transport.getPeer().host
         print("[*] New client connected: {}".format(ip_addr))
 
-
-    #def connectionLost(self, reason):
+    # def connectionLost(self, reason):
     #    #self.factory.protocols.remove(self)
 
     def stringReceived(self, string):
@@ -145,7 +148,7 @@ class TrackerFactory(ServerFactory):
     """
     def __init__(self, db):
         self.db = db
-        self.notiviables = { }
+        self.notiviables = {}
 
     def buildProtocol(self, addr):
         return TrackerProtocol(self, self.db)
@@ -155,7 +158,6 @@ class TrackerFactory(ServerFactory):
         if chatuuid not in self.notiviables:
             return
 
-        
         for prot in self.notiviables[chatuuid]:
             if prot != protocol:
                 prot.push_message(chatuuid, msg_hash, time_sent)
@@ -172,4 +174,4 @@ class Tracker:
         factory = TrackerFactory(self.db)
 
         # TODO load these values from a config file?
-        port = reactor.listenTCP(self.port, factory, interface=self.interface)
+        reactor.listenTCP(self.port, factory, interface=self.interface)

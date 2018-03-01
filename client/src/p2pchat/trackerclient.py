@@ -68,9 +68,11 @@ class TrackerClientProtocol(NetstringReceiver):
 
 
     def parse_message_sent(self, msgJSON):
+        print("Message sent data received")
         chatuuid = msgJSON["chatuuid"]
         msg_hash = msgJSON["msg_hash"]
-        self.factory.notifier.on_message_sent(chatuuid, msg_hash)
+        time_sent = msgJSON["time_sent"]
+        self.factory.notifier.on_message_sent(chatuuid, msg_hash, time_sent)
 
     def parse_message(self, messageJSON):
         chatuuid = messageJSON["chatuuid"]
@@ -91,6 +93,7 @@ class TrackerClientProtocol(NetstringReceiver):
         self.factory.notifier.on_messages_received(chatuuid, fromtime, tilltime, messages)
 
     def stringReceived(self, string):
+        print("Data received from tracker")
         dataJSON = json.loads(string)
         action = dataJSON["action"]
         if action == "createdchat":
@@ -110,10 +113,9 @@ class ITrackerNotifier(object):
     def on_chat_created(self, chatuuid):
         """
         Called when a chat is created
-
         """
 
-    def on_message_sent(self, chatuuid, msg_hash):
+    def on_message_sent(self, chatuuid, msg_hash, time_sent):
         """
         Called when a message is sent to the tracker
         """

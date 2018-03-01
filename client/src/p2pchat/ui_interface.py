@@ -159,18 +159,23 @@ class UIInterface(tk.Frame):
         #    self.add_chat('*None*', '')
         #    return
 
-    def refresh_chat_messages(self):
-        self.application.get_chat_messages(self.current_chatuuid).addCallback(self._refresh_chat_messages)
+    def refresh_chat_messages(self, result = None):
+        d = self.application.get_chat_messages(self.current_chatuuid)
+        d.addCallback(self._refresh_chat_messages)
+        d.addErrback(print)
 
     def _refresh_chat_messages(self, chat_messages):
         for label in self.chat_list_labels:
             label.destroy()
         
+        row_count=0
         for result_row in chat_messages:
             message = result_row[0]
-            chat_message_label = tk.Label(self.chat_messages_frame, text=message)
-            chat_message_label.grid(row=0, column=0)
+            # TODO: Tekst links uit laten lijnen en lange berichten over meerdere regels
+            chat_message_label = tk.Label(self.chat_messages_frame, text=message, background='#fff')
+            chat_message_label.grid(row=row_count, column=0)
             self.chat_list_labels.append(chat_message_label)
+            row_count = row_count + 1
 
     def on_frame_configure(self, event):
         '''Reset the scroll region to encompass the inner frame'''
