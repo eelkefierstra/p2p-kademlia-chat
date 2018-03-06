@@ -42,7 +42,6 @@ def main():
     app.set_trackerclient(trackerclient)
 
     app.start()
-    # TODO: get p2p bootstrapaddresses
 
     from twisted.internet import reactor
     reactor.run()

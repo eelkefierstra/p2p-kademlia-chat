@@ -10,7 +10,9 @@ from twisted.enterprise import adbapi
 class DBConnection():
     def __init__(self):
         self.dbpool = adbapi.ConnectionPool('sqlite3', 'storage.db', check_same_thread=False)
-        self.check_table_existence('chats').addCallback(self.init_tables)
+        d = self.check_table_existence('chats')
+        d.addCallback(self.init_tables)
+        d.addErrback(print)
         return
     
     # Checks if table exists in DB and return tablename in result[0][0]
