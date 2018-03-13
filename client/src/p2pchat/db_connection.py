@@ -52,12 +52,8 @@ class DBConnection():
             return None
     
     def insert_new_chat(self, chatName, chatuuid):
-        try:
-            self.dbpool.runOperation("INSERT INTO chats (chatName, chatuuid) VALUES (?,?)", [chatName, chatuuid])
-            print("Stored chat with chatuuid: {} and name: {} in DB".format(chatuuid, chatName))
-        except:
-            print('Error in inserting new chat')
-            # TODO actually work around the error
+        # runOperation returns a deferred
+        return self.dbpool.runOperation("INSERT INTO chats (chatName, chatuuid) VALUES (?,?)", [chatName, chatuuid])
     
     def delete_chat(self,chatName, chatuuid):
         return self.dbpool.runOperation("DELETE FROM chats WHERE chatName=? AND chatuuid=?", [chatName, chatuuid])
