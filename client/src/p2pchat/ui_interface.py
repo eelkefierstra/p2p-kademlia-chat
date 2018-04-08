@@ -160,6 +160,8 @@ class UIInterface(tk.Frame):
         #    return
 
     def refresh_chat_messages(self, result = None):
+        if (self.current_chatuuid == None):
+            return
         d = self.application.get_chat_messages(self.current_chatuuid)
         d.addCallback(self._refresh_chat_messages)
         d.addErrback(print)

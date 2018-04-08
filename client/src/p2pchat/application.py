@@ -57,21 +57,18 @@ class Application(ITrackerNotifier):
         #    #TODO
 
     def join_chat(self, chatuuid):
-        def got_chat_info(chatinfo):
+        try:
+            chatinfo = self.p2p.get_chat_info(chatuuid)
             print("Chat name: {}".format(chatinfo["name"]))
-            # TODO set chat with chatuuid to chatname chatinfo["name"]
             # First join, download all messages
             self.tracker_protocol.get_messages(chatuuid, 0)
-            chatuuids = [chatuuid]
-            # Request message push updates
-            self.tracker_protocol.receive_notifications(chatuuids)
-
-        d = self.p2p.get_chat_info(chatuuid)
-        d.addCallback(got_chat_info)
-
-        def no_chat_info(err):
+            d = self.db_conn.insert_new_chat(chatinfo["name"], chatuuid)
+            def finish_join_chat(result):
+                # Request message push updates
+                self.tracker_protocol.receive_notifications(self.gui.chat_uuid_list)
+            d.addCallback(finish_join_chat)
+        except err:
             print("failed to retrieve chat info: {}".format(err))
-        d.addErrback(no_chat_info)
 
 
     
@@ -138,7 +135,10 @@ class Application(ITrackerNotifier):
             d = self.db_conn.insert_message(message_hash, message_content, message_time, chatuuid)
             d.addErrback(print)
             
-        d.addCallback(self.gui.refresh_chat_messages)
+        if (d == None):
+            return
+        else:
+            d.addCallback(self.gui.refresh_chat_messages)
 
     def on_message_received(self, chatuuid, msg_hash, time_sent):
         """

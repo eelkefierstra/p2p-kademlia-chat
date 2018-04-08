@@ -33,16 +33,11 @@ class P2PConnection:
 
     def get_chat_info(self, chatuuid):
         key = chatuuid
-        d = self.get(key)
-
-        def got_chat_info(chat_info_str):
-            chat_info = json.loads(chat_info_str)
-            if "name" not in chat_info:
-                d.errback(TypeError("Chatname is not in chat_info"))
-            return chat_info
-
-        d.addCallback(got_chat_info)
-        return d
+        chat_info_str = self.get(key)
+        chat_info = json.loads(chat_info_str)
+        if "name" not in chat_info:
+            TypeError("Chatname is not in chat_info")
+        return chat_info
 
     def _send(self, key, data):
         self.loop.run_until_complete(self.server.set(key, data))  # TODO: handle error in setting message
