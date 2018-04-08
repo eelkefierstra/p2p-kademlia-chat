@@ -111,7 +111,7 @@ class Application(ITrackerNotifier):
         self.p2p.set_chat_info(chatuuid, chatname)
         d = self.db_conn.insert_new_chat(chatname, chatuuid)
         # use lambda, because refresh_chat_list takes no args
-        d.addCallback(lambda x: self.gui.refresh_chat_list)
+        d.addCallback(lambda x: self.gui.refresh_chat_list())
         d.addErrback(print)
 
     def on_message_sent(self, chatuuid, msg_hash, time_sent):
