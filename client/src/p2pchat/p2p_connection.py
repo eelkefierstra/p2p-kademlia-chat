@@ -41,6 +41,7 @@ class P2PConnection:
                 d.errback(TypeError("Chatname is not in chat_info"))
             return chat_info
 
+        d.addErrback(lambda x: print("Failed to retrieve chat info"))
         d.addCallback(got_chat_info)
         return d
 
@@ -58,9 +59,4 @@ class P2PConnection:
         return
 
     def get(self, key):
-        try:
-            message = self.loop.run_until_complete(self.server.get(key))
-        except:
-            # TODO: Could not get message from network, what now?
-            return
-        return message
+        return self.loop.run_until_complete(self.server.get(key))

@@ -9,7 +9,7 @@ from p2pchat.database import P2PChatDB
 
 def check_file_exists(parser, filepath):
     if not os.path.exists(filepath):
-        parser.error("The file {} does not exist!".format(arg))
+        parser.error("The file {} does not exist!".format(filepath))
     return filepath
 
 
@@ -24,7 +24,7 @@ This is the tracker server for the p2p kademlia chat protocol.
     parser.add_argument('--port', type=int, help=helpPort, default=1337)
 
     helpIface = "The interface to listen on. Default is localhost."
-    parser.add_argument('--iface', help=helpIface, default='localhost')
+    parser.add_argument('--bindaddr', help=helpIface, default='localhost')
 
     helpDbHost = "The database host. Default is localhost."
     parser.add_argument('--dbhost', help=helpDbHost, default='localhost')
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     p2pServer = P2PConnection()
     db = P2PChatDB(args.dbhost, args.dbport, args.dbprivkey, args.dbcert)
     db.connect()
-    tracker = Tracker(args.iface, args.port, db)
+    tracker = Tracker(args.bindaddr, args.port, db)
 
     from twisted.internet import reactor
     tracker.start(reactor)

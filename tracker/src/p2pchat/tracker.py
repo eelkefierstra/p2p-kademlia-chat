@@ -165,8 +165,8 @@ class TrackerFactory(ServerFactory):
 
 class Tracker:
 
-    def __init__(self, iface, port, db):
-        self.interface = iface
+    def __init__(self, bindaddr, port, db):
+        self.bindaddr = bindaddr
         self.port = port
         self.db = db
 
@@ -174,4 +174,4 @@ class Tracker:
         factory = TrackerFactory(self.db)
 
         # TODO load these values from a config file?
-        reactor.listenTCP(self.port, factory, interface=self.interface)
+        reactor.listenTCP(self.port, factory, interface=self.bindaddr)
