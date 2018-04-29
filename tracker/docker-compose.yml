@@ -1,0 +1,16 @@
+version: "3"
+
+
+services:
+  trackerdb:
+    build:
+      context: ./mongo-docker
+    ports:
+      - "127.0.0.1:27017:27017"
+    #volumes:
+      #- "./mongo-docker/mongod.conf:/etc/mongod.conf"
+
+  #tracker:
+    #build:
+      #context: ./
+      
