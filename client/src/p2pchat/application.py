@@ -17,7 +17,7 @@ class Application(ITrackerNotifier):
         self.p2p = p2pObject
         #self.tracker = trackerclient
         self.db_conn = dbConnection
-        
+
         root = Tk()
         # This fixes the reactor error on closing root window with the 'X' button
         from twisted.internet import reactor
@@ -35,7 +35,7 @@ class Application(ITrackerNotifier):
         d = self.tracker.connect()
         d.addCallback(self.tracker_connected)
         d.addErrback(self.tracker_unavailable)
-        
+
     def tracker_connected(self, proto):
         self.tracker_protocol = proto
 
@@ -43,11 +43,11 @@ class Application(ITrackerNotifier):
         # TODO popup instead of print
         if type(err) == twisted.internet.error.ConnectionRefusedError:
             print("The tracker is currently unavailable, try again later.");
-        
+
         from twisted.internet import reactor
         reactor.stop()
 
-    
+
     def create_chat(self, chatname):
         print("Creating chat")
         self.chatinfoqueue.put(chatname)
@@ -57,30 +57,31 @@ class Application(ITrackerNotifier):
         #    #TODO
 
     def join_chat(self, chatuuid):
-        try:
-            chatinfo = self.p2p.get_chat_info(chatuuid)
-            print("Chat name: {}".format(chatinfo["name"]))
-            # First join, download all messages
-            self.tracker_protocol.get_messages(chatuuid, 0)
-            d = self.db_conn.insert_new_chat(chatinfo["name"], chatuuid)
-            def finish_join_chat(result):
-                # Request message push updates
-                self.tracker_protocol.receive_notifications(self.gui.chat_uuid_list)
-            d.addCallback(finish_join_chat)
-        except err:
-            print("failed to retrieve chat info: {}".format(err))
+        chatinfo = self.p2p.get_chat_info(chatuuid)
+        if not chatinfo:
+            self.gui.popup_warning("Join failed", "Failed to retrieve chat info")
+            return
+
+        print("Chat name: {}".format(chatinfo["name"]))
+        # First join, download all messages
+        self.tracker_protocol.get_messages(chatuuid, 0)
+        d = self.db_conn.insert_new_chat(chatinfo["name"], chatuuid)
+        def finish_join_chat(result):
+            # Request message push updates
+            self.tracker_protocol.receive_notifications(self.gui.chat_uuid_list)
+        d.addCallback(finish_join_chat)
 
 
-    
+
     def remove_chat(self, chatuuid):
         messagehash = self.p2p.send('User left chat.')
         self.db_conn.deleteChat(chatName, chatuuid)
         # TODO: Only send left chat message?
         return
-    
+
     def get_chat_messages(self, chatuuid):
         return self.db_conn.get_chat_messages(chatuuid)
-    
+
     def send_chat_message(self,  chat_uuid, message):
         print("Start sending message: '{}'".format(message))
         try:
@@ -93,7 +94,7 @@ class Application(ITrackerNotifier):
             # If you get here, you done something very wrong!!!
             pass
         return
-    
+
     def get_chat_list(self):
         return self.db_conn.get_chat_list()
 
@@ -126,7 +127,7 @@ class Application(ITrackerNotifier):
         Called when messages are received from the tracker
         """
         print("Messages received from tracker: {} {} {} {}".format(chatuuid, fromtime, tilltime, messages))
-        
+
         d = None
         for message in messages:
             message_hash = message['hash']
@@ -134,7 +135,7 @@ class Application(ITrackerNotifier):
             message_content = self.p2p.get(message_hash)
             d = self.db_conn.insert_message(message_hash, message_content, message_time, chatuuid)
             d.addErrback(print)
-            
+
         if (d == None):
             return
         else:
