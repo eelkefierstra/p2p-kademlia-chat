@@ -82,8 +82,8 @@ class TrackerProtocol(NetstringReceiver):
     Get the messages from fromtime till tilltime
     """
     def get_messages(self, msg_request_json):
-        fromtime = msg_request_json["fromtime"]
-        fromtime_date = datetime.datetime.fromtimestamp(int(fromtime))
+        fromtime = int(msg_request_json["fromtime"])
+        fromtime_date = datetime.datetime.fromtimestamp(fromtime)
         tilltime = int(time.time())
         uuid = msg_request_json["chatuuid"]
 

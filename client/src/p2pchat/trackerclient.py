@@ -49,7 +49,7 @@ class TrackerClientProtocol(NetstringReceiver):
         getmessages_json = {
             "action" : "getmessages",
             "chatuuid" : chatuuid,
-            "fromtime" : str(fromtime)
+            "fromtime" : fromtime
         }
         self.write_json(getmessages_json)
 
@@ -59,8 +59,8 @@ class TrackerClientProtocol(NetstringReceiver):
             "chats": chatuuids
         }
         self.write_json(getnotified_json)
-        
-        
+
+
 
     def parse_new_chat(self, chatJSON):
         chatuuid = chatJSON["chatuuid"]
@@ -79,7 +79,7 @@ class TrackerClientProtocol(NetstringReceiver):
         msg_hash = messageJSON["msg_hash"]
         time_sent = messageJSON["time_sent"]
         self.factory.notifier.on_message_received(chatuuid, msg_hash, time_sent)
-        
+
 
 
     def parse_messages(self, messagesJSON):
