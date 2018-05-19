@@ -64,11 +64,15 @@ class Application(ITrackerNotifier):
 
         print("Chat name: {}".format(chatinfo["name"]))
         # First join, download all messages
+        # TODO when closing the application and reopening, old chats should
+        # still bee in the chat_uuid_list.
+        # Probably we should not use the gui for this information
         self.tracker_protocol.get_messages(chatuuid, 0)
         d = self.db_conn.insert_new_chat(chatinfo["name"], chatuuid)
         def finish_join_chat(result):
             # Request message push updates
-            self.tracker_protocol.receive_notifications(self.gui.chat_uuid_list)
+            # self.tracker_protocol.receive_notifications(self.gui.chat_uuid_list)
+            self.tracker_protocol.receive_notifications([chatuuid])
         d.addCallback(finish_join_chat)
 
 

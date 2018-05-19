@@ -24,7 +24,7 @@ class TrackerProtocol(NetstringReceiver):
         # TODO create unit test to see if the chat is created
         chatuuid = str(uuid.uuid4())
 
-        def write_created_chat(result):
+        def write_created_chat():
             chatresponse_json = {
                 "action": "createdchat",
                 "chatuuid": chatuuid
@@ -34,7 +34,9 @@ class TrackerProtocol(NetstringReceiver):
 
         print("Creating new chat with uuid: {}".format(chatuuid))
         d = self.db.create_chat(chatuuid)
-        d.addCallback(write_created_chat)
+        d.addCallback(lambda x: write_created_chat())
+        # Add this client to the notiviables of the chat
+        d.addCallback(lambda x: self._get_notifications([chatuuid]))
 
     def send_message(self, msg_json):
         print("New message received")
@@ -61,6 +63,9 @@ class TrackerProtocol(NetstringReceiver):
 
     def get_notifications(self, notification_json):
         chatuuids = notification_json["chats"]
+        self._get_notifications(chatuuids)
+
+    def _get_notifications(self, chatuuids):
         for chatuuid in chatuuids:
             if chatuuid not in self.factory.notiviables:
                 self.factory.notiviables[chatuuid] = set()
