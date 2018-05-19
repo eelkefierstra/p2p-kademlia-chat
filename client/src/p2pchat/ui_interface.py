@@ -36,11 +36,12 @@ class UIInterface(tk.Frame):
         self.chat_scroll.grid(row=0, column=1, sticky=tk.N+tk.S)
         self.chat_list_box = tk.Listbox(self.chat_list, yscrollcommand=self.chat_scroll.set)
         self.chat_list_box.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
-        self.chat_list_box.activate(0)
-        self.change_chat() # Initiate program on first chat
+        # self.chat_list_box.activate(0)
+        self.chat_list_box.bind("<<ListboxSelect>>", self.change_chat)
+        # self.change_chat() # Initiate program on first chat
         self.chat_scroll['command'] = self.chat_list_box.yview
-        self.chat_list_button = tk.Button(self.chat_list, text='Select chat', command=self.change_chat)
-        self.chat_list_button.grid(row=1, column=0, columnspan=2, sticky=tk.E+tk.W)
+        # self.chat_list_button = tk.Button(self.chat_list, text='Select chat', command=self.change_chat)
+        # self.chat_list_button.grid(row=1, column=0, columnspan=2, sticky=tk.E+tk.W)
 
         # Build the chat message view
         self.configure_chatmessage_list()
@@ -133,7 +134,8 @@ class UIInterface(tk.Frame):
         self.chat_list_box.insert(tk.END, chatName)
         self.chat_uuid_list.append(chatuuid)
 
-    def change_chat(self):
+    def change_chat(self, evt):
+        print("Changing chat...")
         selected = self.chat_list_box.curselection()
         if selected == ():
             return
