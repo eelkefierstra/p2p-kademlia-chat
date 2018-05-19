@@ -16,7 +16,7 @@ class P2PConnection:
     def __init__(self, bootstrapAdres, listenPort):
         self.server = Server()
         self.server.listen(listenPort)
-        
+
         self.loop = asyncio.get_event_loop()
         self.loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
 

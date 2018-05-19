@@ -1,5 +1,4 @@
-# Installing the tracker
-Run `setup.py install` for installing the tracker
+# Setting up the tracker
 
 ## Firewall configuration
 To prevent the server from being hacked during the configuration, please
@@ -55,6 +54,9 @@ mongo --host localhost --ssl --sslPEMKeyFile /etc/ssl/mongodb.pem  --sslCAFile /
 ```
 
 If you get a shell, your connection is encrypted and ready for p2p-chat!
+
+## Installation of the tracker
+Run `setup.py install` for installing the tracker
 
 ## Testing the tracker
 To start the tracker, run the following command:

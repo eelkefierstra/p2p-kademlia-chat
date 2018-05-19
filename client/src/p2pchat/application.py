@@ -35,9 +35,23 @@ class Application(ITrackerNotifier):
         d = self.tracker.connect()
         d.addCallback(self.tracker_connected)
         d.addErrback(self.tracker_unavailable)
+        d.addCallback(lambda x: self.request_chatnotifications())
 
     def tracker_connected(self, proto):
         self.tracker_protocol = proto
+
+    def request_chatnotifications(self):
+        # Send notification request for all existing chats
+        def got_chat_list(joined_chats):
+            if not joined_chats:
+                return
+
+            if len(joined_chats) > 0:
+                chatuuid_list = [chatuuid for chatname, chatuuid in joined_chats]
+                self.tracker_protocol.receive_notifications(chatuuid_list)
+        deferred_chat_list = self.get_chat_list()
+        deferred_chat_list.addCallback(got_chat_list)
+
 
     def tracker_unavailable(self, err):
         # TODO popup instead of print
