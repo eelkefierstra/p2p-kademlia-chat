@@ -10,8 +10,7 @@ import hashlib
 from kademlia.network import Server
 from twisted.internet import asyncioreactor
 import asyncio
-loop = asyncio.get_event_loop()
-asyncioreactor.install(eventloop=loop)
+# asyncioreactor.install(eventloop=loop)
 
 
 class P2PConnection:
@@ -21,8 +20,10 @@ class P2PConnection:
         self.server.listen(listenPort)
 
         # self.loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
-        # self.loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
+        self.loop = asyncio.get_event_loop()
+        asyncioreactor.install(eventloop=self.loop)
+        # loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
+        self.loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
 
     def get_key(self, content):
         return hashlib.sha256(str.encode(content)).hexdigest()
@@ -44,8 +45,8 @@ class P2PConnection:
         return chat_info
 
     def _send(self, key, data):
-        loop.run_until_complete(self.server.set(key, data))  # TODO: handle error in setting message
-        # self.loop.run_until_complete(self.server.set(key, data))  # TODO: handle error in setting message
+        # loop.run_until_complete(self.server.set(key, data))  # TODO: handle error in setting message
+        self.loop.run_until_complete(self.server.set(key, data))  # TODO: handle error in setting message
         print("Stored key:'{}' in P2P-network".format(key))
 
     def send(self, message):
@@ -59,8 +60,8 @@ class P2PConnection:
 
     def get(self, key):
         try:
-            message = loop.run_until_complete(self.server.get(key))
-            # message = self.loop.run_until_complete(self.server.get(key))
+            # message = loop.run_until_complete(self.server.get(key))
+            message = self.loop.run_until_complete(self.server.get(key))
         except:
             # TODO: Could not get message from network, what now?
             return
