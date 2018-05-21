@@ -16,7 +16,7 @@ This is the client for the p2p kademlia chat protocol
 
     help_port = "The port to connect to. Default to 1337."
     parser.add_argument('--port', type=int, help=help_port, default=1337)
-    
+
     help_port_p2p = "The port to listen on for P2P connections. Default to 8468." # Dynamic port range: 49152-65535
     parser.add_argument('--port-p2p', type=int, help=help_port_p2p, default=8468)
 
@@ -33,9 +33,16 @@ def main():
     args = parse_args()
 
     p2p = P2PConnection(args.host, args.port_p2p)
-    dbConn = DBConnection()
+    db_conn = DBConnection()
 
-    app = Application(p2p, dbConn)
+    def setup_db_failed(failure):
+        print("Setting up the db failed: {}".format(failure.getErrorMessage()))
+        from twisted.internet import reactor
+        reactor.stop()
+    d = db_conn.setup_db()
+    d.addErrback(setup_db_failed)
+
+    app = Application(p2p, db_conn)
 
     trackerclient = TrackerClient(args.host, args.port, notifier=app)
 

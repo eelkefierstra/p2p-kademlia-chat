@@ -9,6 +9,7 @@ from p2pchat.ui_interface import UIInterface
 from tkinter import *
 from twisted.internet import tksupport
 import queue
+import sys
 
 
 class Application(ITrackerNotifier):
@@ -35,10 +36,33 @@ class Application(ITrackerNotifier):
         d = self.tracker.connect()
         d.addCallback(self.tracker_connected)
         d.addErrback(self.tracker_unavailable)
+        d.addCallback(lambda x: self.get_missed_messages())
         d.addCallback(lambda x: self.request_chatnotifications())
 
     def tracker_connected(self, proto):
         self.tracker_protocol = proto
+
+    def get_missed_messages(self):
+        d = self.get_chat_list()
+        def got_chat_list(chat_list):
+            if not chat_list:
+                # nothing to do, no chats == no messages
+                raise ValueError("No chats found, so no messages to download.")
+            for chatname, chatuuid in chat_list:
+                # Get messages for each chat
+                def got_latest_msg_ts(last_msg_ts):
+                    self.tracker_protocol.get_messages(chatuuid, last_msg_ts)
+
+                d2 = self.db_conn.get_latest_msg_ts(chatuuid)
+                d2.addCallback(got_latest_msg_ts)
+
+        def got_no_chats(failure):
+            failure.trap(ValueError)
+            print(failure.getErrorMessage(), file=sys.stderr)
+        d.addCallback(got_chat_list)
+        d.addErrback(got_no_chats)
+
+
 
     def request_chatnotifications(self):
         # Send notification request for all existing chats
@@ -71,6 +95,7 @@ class Application(ITrackerNotifier):
         #    #TODO
 
     def join_chat(self, chatuuid):
+        # TODO check if this chat is already in the db, if so, just do nothing
         chatinfo = self.p2p.get_chat_info(chatuuid)
         if not chatinfo:
             self.gui.popup_warning("Join failed", "Failed to retrieve chat info")
@@ -146,18 +171,46 @@ class Application(ITrackerNotifier):
         """
         print("Messages received from tracker: {} {} {} {}".format(chatuuid, fromtime, tilltime, messages))
 
-        d = None
-        for message in messages:
-            message_hash = message['hash']
-            message_time = message['time']
-            message_content = self.p2p.get(message_hash)
-            d = self.db_conn.insert_message(message_hash, message_content, message_time, chatuuid)
-            d.addErrback(print)
+        def got_latest_msg_ts(msg_ts):
+            if msg_ts != fromtime:
+                # Discard this message update, as the fromtime is later than
+                # the latest update time.
+                raise ValueError(
+                            "fromtime != previous tilltime: fromtime = {}"
+                            " and previous tilltime = {}.".format(fromtime, msg_ts)
+                        )
+            # Set the latest update time to tilltime
+            # TODO add as deferred callback?
+            self.db_conn.set_latest_msg_ts(chatuuid, tilltime)
 
-        if (d == None):
-            return
-        else:
-            d.addCallback(self.gui.refresh_chat_messages)
+        def latest_ts_mismatch(failure):
+            failure.trap(ValueError)
+            print(failure.getErrorMessage(),file=sys.stderr)
+
+        d = self.db_conn.get_latest_msg_ts(chatuuid)
+        d.addCallback(got_latest_msg_ts)
+        d.addErrback(latest_ts_mismatch)
+
+        def p2p_download_messages():
+            # TODO CHANGE d to something else!!!
+            d2 = None
+            for message in messages:
+                message_hash = message['hash']
+                message_time = message['time']
+                message_content = self.p2p.get(message_hash)
+                d2 = self.db_conn.insert_message(message_hash, message_content, message_time, chatuuid)
+                d2.addErrback(print)
+
+            # Refresh GUI only when new messages were downloaded
+            if (d2 == None):
+                return
+            else:
+                d2.addCallback(self.gui.refresh_chat_messages)
+
+        # TODO check if this callback is still fired when latest_ts_mismatch is
+        # called
+        d.addCallback(lambda x: p2p_download_messages())
+        d.addErrback(print)
 
     def on_message_received(self, chatuuid, msg_hash, time_sent):
         """
