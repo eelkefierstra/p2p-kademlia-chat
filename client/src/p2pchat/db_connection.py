@@ -92,7 +92,7 @@ class DBConnection():
     def get_chat_messages(self, chatuuid):
         return self.dbpool.runQuery("SELECT m.chatContent FROM p2pMessageInfo AS p, messages AS m WHERE p.chatuuid=? AND p.messageHash=m.messageHash ORDER BY p.timeSend ASC", [chatuuid])
 
-    def insert_message(self, message_hash, message_content, message_time, chat_uuid):
+    def insert_message(self, message_content, message_hash, message_time, chat_uuid):
         # Check if message already stored
         return self.dbpool.runInteraction(self._insert_message, message_hash, message_content, message_time, chat_uuid)
 

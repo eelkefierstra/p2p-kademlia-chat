@@ -32,8 +32,10 @@ class Application(ITrackerNotifier):
     def set_trackerclient(self, trackerclient):
         self.tracker = trackerclient
 
-    def start(self):
-        d = self.tracker.connect()
+    def start(self, p2p_bootstrap_address):
+        d = self.p2p.connect_p2p(p2p_bootstrap_address)
+        d.addCallback(self.tracker.connect)
+        d.addErrback(self.p2p_unavailable)
         d.addCallback(self.tracker_connected)
         d.addErrback(self.tracker_unavailable)
         d.addCallback(lambda x: self.get_missed_messages())
@@ -80,7 +82,20 @@ class Application(ITrackerNotifier):
     def tracker_unavailable(self, err):
         # TODO popup instead of print
         if type(err) == twisted.internet.error.ConnectionRefusedError:
-            print("The tracker is currently unavailable, try again later.");
+            print("The tracker is currently unavailable, try again later.")
+        else:
+            print(err)
+
+        from twisted.internet import reactor
+        reactor.stop()
+
+
+    def p2p_unavailable(self, err):
+        # TODO popup instead of print
+        if type(err) == twisted.internet.error.ConnectionRefusedError:
+            print("The P2P-network is currently unavailable, try again later.")
+        else:
+            print(err)
 
         from twisted.internet import reactor
         reactor.stop()
@@ -95,24 +110,31 @@ class Application(ITrackerNotifier):
         #    #TODO
 
     def join_chat(self, chatuuid):
+        def got_chat_info(res, chatuuid):
+            def finish_join_chat(result):
+                # Request message push updates
+                # self.tracker_protocol.receive_notifications(self.gui.chat_uuid_list)
+                self.tracker_protocol.receive_notifications([chatuuid])
+                
+            chat_info = json.loads(res)
+            if not chat_info:
+                self.gui.popup_warning("Join failed", "Failed to retrieve chat info")
+                return
+            if "name" not in chat_info:
+                TypeError("Chatname is not in chatinfo")
+    
+            print("Chat name: {}".format(chat_info["name"]))
+            # First join, download all messages
+            # TODO when closing the application and reopening, old chats should
+            # still bee in the chat_uuid_list.
+            # Probably we should not use the gui for this information
+            self.tracker_protocol.get_messages(chatuuid, 0)
+            d = self.db_conn.insert_new_chat(chatinfo["name"], chatuuid)
+            d.addCallback(finish_join_chat)
         # TODO check if this chat is already in the db, if so, just do nothing
-        chatinfo = self.p2p.get_chat_info(chatuuid)
-        if not chatinfo:
-            self.gui.popup_warning("Join failed", "Failed to retrieve chat info")
-            return
-
-        print("Chat name: {}".format(chatinfo["name"]))
-        # First join, download all messages
-        # TODO when closing the application and reopening, old chats should
-        # still bee in the chat_uuid_list.
-        # Probably we should not use the gui for this information
-        self.tracker_protocol.get_messages(chatuuid, 0)
-        d = self.db_conn.insert_new_chat(chatinfo["name"], chatuuid)
-        def finish_join_chat(result):
-            # Request message push updates
-            # self.tracker_protocol.receive_notifications(self.gui.chat_uuid_list)
-            self.tracker_protocol.receive_notifications([chatuuid])
-        d.addCallback(finish_join_chat)
+        d = self.p2p.get_chat_info(chatuuid)
+        d.addCallback(got_chat_info, chatuuid)
+        
 
 
 
@@ -160,8 +182,8 @@ class Application(ITrackerNotifier):
         Called when a message is sent to the tracker
         """
         print("Received message from tracker: {} {} {}".format(chatuuid, msg_hash, time_sent))
-        message_content = self.p2p.get(msg_hash)
-        d = self.db_conn.insert_message(msg_hash, message_content, time_sent, chatuuid)
+        d = self.p2p.get(msg_hash)
+        d.addCallback(self.db_conn.insert_message, msg_hash, time_sent, chatuuid)
         d.addErrback(print)
         d.addCallback(self.gui.refresh_chat_messages)
 
@@ -197,8 +219,8 @@ class Application(ITrackerNotifier):
             for message in messages:
                 message_hash = message['hash']
                 message_time = message['time']
-                message_content = self.p2p.get(message_hash)
-                d2 = self.db_conn.insert_message(message_hash, message_content, message_time, chatuuid)
+                d2 = self.p2p.get(message_hash)
+                d2.addCallback(self.db_conn.insert_message, message_hash, message_time, chatuuid)
                 d2.addErrback(print)
 
             # Refresh GUI only when new messages were downloaded
@@ -217,7 +239,7 @@ class Application(ITrackerNotifier):
         Called when a message is pushed by the tracker
         """
         print("Received message from tracker: {} {} {}".format(chatuuid, msg_hash, time_sent))
-        message_content = self.p2p.get(msg_hash)
-        d = self.db_conn.insert_message(msg_hash, message_content, time_sent, chatuuid)
+        d = self.p2p.get(msg_hash)
+        d.addCallback(self.db_conn.insert_message, msg_hash, time_sent, chatuuid)
         d.addErrback(print)
         d.addCallback(self.gui.refresh_chat_messages)

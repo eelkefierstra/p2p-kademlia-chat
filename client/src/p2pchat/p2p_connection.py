@@ -10,20 +10,25 @@ import hashlib
 from kademlia.network import Server
 from twisted.internet import asyncioreactor
 import asyncio
+from twisted.internet.defer import Deferred
+from asyncio.tasks import ensure_future
 # asyncioreactor.install(eventloop=loop)
 
 
 class P2PConnection:
 
-    def __init__(self, bootstrapAdres, listenPort):
-        self.server = Server()
-        self.server.listen(listenPort)
-
-        # self.loop = asyncio.get_event_loop()
+    def __init__(self, listenPort):
         self.loop = asyncio.get_event_loop()
         asyncioreactor.install(eventloop=self.loop)
-        # loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
-        self.loop.run_until_complete(self.server.bootstrap([(bootstrapAdres, 8468)]))
+        
+        self.server = Server()
+        self.server.listen(listenPort)
+        
+        
+    def connect_p2p(self, bootstrap_address):
+        future = ensure_future(self.server.bootstrap([(bootstrap_address, 8468)]))
+        d = Deferred.fromFuture(future)
+        return d
 
     def get_key(self, content):
         return hashlib.sha256(str.encode(content)).hexdigest()
@@ -37,32 +42,29 @@ class P2PConnection:
         self._send(key, chat_info_str)
 
     def get_chat_info(self, chatuuid):
-        key = chatuuid
-        chat_info_str = self.get(key)
-        chat_info = json.loads(chat_info_str)
-        if "name" not in chat_info:
-            TypeError("Chatname is not in chat_info")
-        return chat_info
+        d = self.get(chatuuid)
+        return d
 
     def _send(self, key, data):
-        # loop.run_until_complete(self.server.set(key, data))  # TODO: handle error in setting message
-        self.loop.run_until_complete(self.server.set(key, data))  # TODO: handle error in setting message
-        print("Stored key:'{}' in P2P-network".format(key))
+        def done():
+            print("Stored key:'{}' in network".format(key))
+            
+        print("Start storing key:'{}' in P2P-network".format(key))
+        fut = self.server.set(key, data)
+        d = Deferred.fromFuture(fut)
+        d.addCallback(done)
+        d.addErrback(self.send_failed)
 
     def send(self, message):
         key = self.get_key(message)
         self._send(key, message)
         return key
 
-    def sendFailed(self, err):
-        # Auto resend to network or ask user to resend?
+    def send_failed(self, err):
+        #TODO: Auto resend to network or ask user to resend?
         return
 
     def get(self, key):
-        try:
-            # message = loop.run_until_complete(self.server.get(key))
-            message = self.loop.run_until_complete(self.server.get(key))
-        except:
-            # TODO: Could not get message from network, what now?
-            return
-        return message
+        fut = self.server.get(key)
+        d = Deferred.fromFuture(fut)
+        return d

@@ -21,7 +21,7 @@ This is the client for the p2p kademlia chat protocol
     parser.add_argument('--port-p2p', type=int, help=help_port_p2p, default=8468)
 
     help_host = "The host to connect to."
-    parser.add_argument('--host', help=help_host, default='127.0.0.1')
+    parser.add_argument('--host', help=help_host, default='192.168.80.130')
 
     args = parser.parse_args()
     print(args)
@@ -32,7 +32,8 @@ This is the client for the p2p kademlia chat protocol
 def main():
     args = parse_args()
 
-    p2p = P2PConnection(args.host, args.port_p2p)
+    p2p = P2PConnection(args.port_p2p)
+    
     db_conn = DBConnection()
 
     def setup_db_failed(failure):
@@ -48,7 +49,7 @@ def main():
 
     app.set_trackerclient(trackerclient)
 
-    app.start()
+    app.start(args.host)
 
     from twisted.internet import reactor
     reactor.run()
