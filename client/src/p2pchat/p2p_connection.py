@@ -39,21 +39,22 @@ class P2PConnection:
                 }
         chat_info_str = json.dumps(chat_info)
         key = chatuuid
-        self._send(key, chat_info_str)
+        d = self._send(key, chat_info_str)
+        d.addCallback(done, key)
+        d.addErrback(self.send_failed)
+        
+        def done(res, key):
+            print("Stored key:'{}' in network".format(key))
 
     def get_chat_info(self, chatuuid):
         d = self.get(chatuuid)
         return d
 
     def _send(self, key, data):
-        def done():
-            print("Stored key:'{}' in network".format(key))
-            
         print("Start storing key:'{}' in P2P-network".format(key))
         fut = self.server.set(key, data)
         d = Deferred.fromFuture(fut)
-        d.addCallback(done)
-        d.addErrback(self.send_failed)
+        return d
 
     def send(self, message):
         key = self.get_key(message)

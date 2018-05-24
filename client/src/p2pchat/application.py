@@ -8,6 +8,7 @@ from p2pchat.trackerclient import ITrackerNotifier
 from p2pchat.ui_interface import UIInterface
 from tkinter import *
 from twisted.internet import tksupport
+from twisted.internet.error import *
 import queue
 import sys
 
@@ -34,12 +35,11 @@ class Application(ITrackerNotifier):
 
     def start(self, p2p_bootstrap_address):
         d = self.p2p.connect_p2p(p2p_bootstrap_address)
-        d.addCallback(self.tracker.connect)
-        d.addErrback(self.p2p_unavailable)
-        d.addCallback(self.tracker_connected)
-        d.addErrback(self.tracker_unavailable)
+        d.addCallbacks(self.tracker.connect, self.p2p_unavailable)
+        d.addCallbacks(self.tracker_connected, self.tracker_unavailable)
         d.addCallback(lambda x: self.get_missed_messages())
         d.addCallback(lambda x: self.request_chatnotifications())
+        d.addErrback(print)
 
     def tracker_connected(self, proto):
         self.tracker_protocol = proto
@@ -81,7 +81,7 @@ class Application(ITrackerNotifier):
 
     def tracker_unavailable(self, err):
         # TODO popup instead of print
-        if type(err) == twisted.internet.error.ConnectionRefusedError:
+        if type(err) == ConnectionRefusedError:
             print("The tracker is currently unavailable, try again later.")
         else:
             print(err)
@@ -115,7 +115,8 @@ class Application(ITrackerNotifier):
                 # Request message push updates
                 # self.tracker_protocol.receive_notifications(self.gui.chat_uuid_list)
                 self.tracker_protocol.receive_notifications([chatuuid])
-                
+            if not res:
+                return
             chat_info = json.loads(res)
             if not chat_info:
                 self.gui.popup_warning("Join failed", "Failed to retrieve chat info")
