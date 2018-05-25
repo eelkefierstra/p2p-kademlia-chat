@@ -35,7 +35,7 @@ class Application(ITrackerNotifier):
 
     def start(self, p2p_bootstrap_address):
         d = self.p2p.connect_p2p(p2p_bootstrap_address)
-        d.addCallbacks(self.tracker.connect, self.p2p_unavailable)
+        d.addCallbacks(lambda x: self.tracker.connect() , self.p2p_unavailable)
         d.addCallbacks(self.tracker_connected, self.tracker_unavailable)
         d.addCallback(lambda x: self.get_missed_messages())
         d.addCallback(lambda x: self.request_chatnotifications())
@@ -92,7 +92,7 @@ class Application(ITrackerNotifier):
 
     def p2p_unavailable(self, err):
         # TODO popup instead of print
-        if type(err) == twisted.internet.error.ConnectionRefusedError:
+        if type(err) == ConnectionRefusedError:
             print("The P2P-network is currently unavailable, try again later.")
         else:
             print(err)
@@ -172,8 +172,8 @@ class Application(ITrackerNotifier):
         print("Created chat on tracker with chatuuid: {}".format(chatuuid))
         chatname = self.chatinfoqueue.get()
         # TODO sanity checks on chatname
-        self.p2p.set_chat_info(chatuuid, chatname)
-        d = self.db_conn.insert_new_chat(chatname, chatuuid)
+        d= self.p2p.set_chat_info(chatuuid, chatname)
+        d.addCallback(lambda q: self.db_conn.insert_new_chat(chatname, chatuuid))
         # use lambda, because refresh_chat_list takes no args
         d.addCallback(lambda x: self.gui.refresh_chat_list())
         d.addErrback(print)

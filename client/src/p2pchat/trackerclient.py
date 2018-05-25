@@ -154,7 +154,7 @@ class TrackerClient:
         self.port = port
         self.factory = TrackerClientFactory(notifier)
 
-    def connect(self, res):
+    def connect(self):
         from twisted.internet import reactor
         endpoint = TCP4ClientEndpoint(reactor, self.host, self.port)
         return endpoint.connect(self.factory)

@@ -42,6 +42,7 @@ class P2PConnection:
         d = self._send(key, chat_info_str)
         d.addCallback(done, key)
         d.addErrback(self.send_failed)
+        return d
         
         def done(res, key):
             print("Stored key:'{}' in network".format(key))
@@ -52,8 +53,10 @@ class P2PConnection:
 
     def _send(self, key, data):
         print("Start storing key:'{}' in P2P-network".format(key))
-        fut = self.server.set(key, data)
+        fut = ensure_future(self.server.set(key, data))
         d = Deferred.fromFuture(fut)
+        from twisted.internet import reactor
+        d.addTimeout(30, reactor, self.send_failed)
         return d
 
     def send(self, message):
@@ -63,9 +66,13 @@ class P2PConnection:
 
     def send_failed(self, err):
         #TODO: Auto resend to network or ask user to resend?
+        if type(err) is TimeoutError:
+            print('P2P send timed out')
+        else:
+            print(err)
         return
 
     def get(self, key):
-        fut = self.server.get(key)
+        fut = ensure_future(self.server.get(key))
         d = Deferred.fromFuture(fut)
         return d
