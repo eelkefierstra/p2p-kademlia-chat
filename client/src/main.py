@@ -33,7 +33,7 @@ def main():
     args = parse_args()
 
     p2p = P2PConnection(args.port_p2p)
-    
+
     db_conn = DBConnection()
 
     def setup_db_failed(failure):
@@ -49,9 +49,9 @@ def main():
 
     app.set_trackerclient(trackerclient)
 
-    app.start(args.host)
 
     from twisted.internet import reactor
+    reactor.callWhenRunning(app.start, args.host)
     reactor.run()
 
 

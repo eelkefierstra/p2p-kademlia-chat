@@ -11,6 +11,7 @@ from twisted.internet import tksupport
 from twisted.internet.error import *
 import queue
 import sys
+import json
 
 
 class Application(ITrackerNotifier):
@@ -35,8 +36,10 @@ class Application(ITrackerNotifier):
 
     def start(self, p2p_bootstrap_address):
         d = self.p2p.connect_p2p(p2p_bootstrap_address)
-        d.addCallbacks(lambda x: self.tracker.connect() , self.p2p_unavailable)
-        d.addCallbacks(self.tracker_connected, self.tracker_unavailable)
+        d.addErrback(self.p2p_unavailable)
+        d.addCallback(lambda x: self.tracker.connect())
+        d.addErrback(self.tracker_unavailable)
+        d.addCallback(self.tracker_connected)
         d.addCallback(lambda x: self.get_missed_messages())
         d.addCallback(lambda x: self.request_chatnotifications())
         d.addErrback(print)
@@ -81,10 +84,8 @@ class Application(ITrackerNotifier):
 
     def tracker_unavailable(self, err):
         # TODO popup instead of print
-        if type(err) == ConnectionRefusedError:
-            print("The tracker is currently unavailable, try again later.")
-        else:
-            print(err)
+        err.trap(ConnectionRefusedError)
+        print("The tracker is currently unavailable, try again later.")
 
         from twisted.internet import reactor
         reactor.stop()
@@ -92,11 +93,10 @@ class Application(ITrackerNotifier):
 
     def p2p_unavailable(self, err):
         # TODO popup instead of print
-        if type(err) == ConnectionRefusedError:
-            print("The P2P-network is currently unavailable, try again later.")
-        else:
-            print(err)
+        err.trap(ConnectionRefusedError)
+        print("P2P connect failed: {}".format(err.getErrorMessage()),file=sys.stderr)
 
+        # TODO do something else than stopping reactor
         from twisted.internet import reactor
         reactor.stop()
 
@@ -119,23 +119,30 @@ class Application(ITrackerNotifier):
                 return
             chat_info = json.loads(res)
             if not chat_info:
+                # TODO raising an exception is better, will be handled by
+                # errback
                 self.gui.popup_warning("Join failed", "Failed to retrieve chat info")
                 return
             if "name" not in chat_info:
                 TypeError("Chatname is not in chatinfo")
-    
+
             print("Chat name: {}".format(chat_info["name"]))
             # First join, download all messages
             # TODO when closing the application and reopening, old chats should
             # still bee in the chat_uuid_list.
             # Probably we should not use the gui for this information
             self.tracker_protocol.get_messages(chatuuid, 0)
-            d = self.db_conn.insert_new_chat(chatinfo["name"], chatuuid)
+            d = self.db_conn.insert_new_chat(chat_info["name"], chatuuid)
             d.addCallback(finish_join_chat)
+
+        def failed_chat_info(err):
+            self.gui.popup_warning("Join failed", "Failed to retrieve chat info")
+
         # TODO check if this chat is already in the db, if so, just do nothing
         d = self.p2p.get_chat_info(chatuuid)
         d.addCallback(got_chat_info, chatuuid)
-        
+        d.addErrback(failed_chat_info)
+
 
 
 
