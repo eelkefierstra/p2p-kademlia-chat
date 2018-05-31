@@ -66,8 +66,8 @@ class DBConnection():
         # runOperation returns a deferred
         return self.dbpool.runOperation("INSERT INTO chats (chatName, chatuuid) VALUES (?,?)", [chatName, chatuuid])
 
-    def delete_chat(self,chatName, chatuuid):
-        return self.dbpool.runOperation("DELETE FROM chats WHERE chatName=? AND chatuuid=?", [chatName, chatuuid])
+    # def delete_chat(self, chatuuid):
+        # return self.dbpool.runOperation("DELETE FROM chats WHERE chatuuid=?", [chatuuid])
 
     def get_latest_msg_ts(self, chatuuid):
         d = self.dbpool.runQuery("""

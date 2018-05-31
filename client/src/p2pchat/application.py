@@ -142,31 +142,29 @@ class Application(ITrackerNotifier):
         d = self.p2p.get_chat_info(chatuuid)
         d.addCallback(got_chat_info, chatuuid)
         d.addErrback(failed_chat_info)
+        return d
 
 
-
-
-    def remove_chat(self, chatuuid):
-        messagehash = self.p2p.send('User left chat.')
-        self.db_conn.deleteChat(chatName, chatuuid)
-        # TODO: Only send left chat message?
-        return
+    # def remove_chat(self, chatuuid):
+        # # TODO convert to JSON
+        # # d, key = self.p2p.send('User left chat.')
+        # d.addCallback(self.db_conn.delete_chat(chatuuid))
+        # # TODO: Only send left chat message?
+        # return
 
     def get_chat_messages(self, chatuuid):
         return self.db_conn.get_chat_messages(chatuuid)
 
     def send_chat_message(self,  chat_uuid, message):
         print("Start sending message: '{}'".format(message))
-        try:
-            message_str = str(message)
-            messagehash = self.p2p.send(message_str)
+        def message_sent(chatuuid, msghash):
             print("Message stored in P2P-network")
-            self.tracker_protocol.send_message(chat_uuid, messagehash)
-        except Exception:
-            # Could not make a string from message input
-            # If you get here, you done something very wrong!!!
-            pass
-        return
+            self.tracker_protocol.send_message(chatuuid, msghash)
+
+        message_str = str(message)
+        d, key = self.p2p.send(message_str)
+        d.addCallback(lambda x: message_sent(chat_uuid, key))
+        return d
 
     def get_chat_list(self):
         return self.db_conn.get_chat_list()
@@ -179,7 +177,7 @@ class Application(ITrackerNotifier):
         print("Created chat on tracker with chatuuid: {}".format(chatuuid))
         chatname = self.chatinfoqueue.get()
         # TODO sanity checks on chatname
-        d= self.p2p.set_chat_info(chatuuid, chatname)
+        d = self.p2p.set_chat_info(chatuuid, chatname)
         d.addCallback(lambda q: self.db_conn.insert_new_chat(chatname, chatuuid))
         # use lambda, because refresh_chat_list takes no args
         d.addCallback(lambda x: self.gui.refresh_chat_list())

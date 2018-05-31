@@ -71,7 +71,6 @@ class UIInterface(tk.Frame):
 
         create_chat_button = tk.Button(top_level, text='Create chat', command=lambda: self.create_chat_popup_action(text_entry_new_chat.get(), top_level))
         create_chat_button.grid(row=2, column=0)
-        return
 
     def join_chat_popup(self):
         join_chat_text = 'Enter the chat uuid'
@@ -86,22 +85,19 @@ class UIInterface(tk.Frame):
         join_button.grid(row=2, column=0)
 
         text_entry.focus_force()
-        return
 
     def popup_warning(self, title, msg):
         tk.messagebox.showwarning(title, msg)
 
     def join_chat_popup_action(self, chatuuid, top_level):
-        self.application.join_chat(chatuuid)
-        #self.refresh_chat_list()
+        d = self.application.join_chat(chatuuid)
+        d.addCallback(lambda x: self.refresh_chat_list())
         top_level.destroy()
-        return
 
     def create_chat_popup_action(self, chatName, toplevel):
         self.application.create_chat(chatName)
         #self.refresh_chat_list()
         toplevel.destroy()
-        return
 
     def configure_chatmessage_list(self):
         self.chat_view = tk.Frame(self)
@@ -126,9 +122,8 @@ class UIInterface(tk.Frame):
 
     def send_chat_message(self):
         chat_message = self.chat_message_entry.get()
-        self.application.send_chat_message(self.current_chatuuid, chat_message)
-        self.chat_message_entry.delete(0, len(chat_message))
-        return
+        d = self.application.send_chat_message(self.current_chatuuid, chat_message)
+        d.addCallback(lambda x: self.chat_message_entry.delete(0, len(chat_message)))
 
     def add_chat(self, chatName, chatuuid):
         self.chat_list_box.insert(tk.END, chatName)

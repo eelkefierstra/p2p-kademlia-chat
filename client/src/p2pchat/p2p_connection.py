@@ -48,13 +48,13 @@ class P2PConnection:
                 }
         chat_info_str = json.dumps(chat_info)
         key = chatuuid
+        def done(res, key):
+            print("Stored key:'{}' in network".format(key))
         d = self._send(key, chat_info_str)
         d.addCallback(done, key)
         d.addErrback(self.send_failed)
         return d
 
-        def done(res, key):
-            print("Stored key:'{}' in network".format(key))
 
     def get_chat_info(self, chatuuid):
         d = self.get(chatuuid)
@@ -69,8 +69,6 @@ class P2PConnection:
         return d
 
     def send(self, message):
-        import pdb
-        pdb.set_trace()
         key = self.get_key(message)
         d = self._send(key, message)
         return d, key
