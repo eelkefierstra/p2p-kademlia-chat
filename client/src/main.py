@@ -17,11 +17,18 @@ This is the client for the p2p kademlia chat protocol
     help_port = "The port to connect to. Default to 1337."
     parser.add_argument('--port', type=int, help=help_port, default=1337)
 
-    help_port_p2p = "The port to listen on for P2P connections. Default to 8468." # Dynamic port range: 49152-65535
-    parser.add_argument('--port-p2p', type=int, help=help_port_p2p, default=8468)
+    # Dynamic port range: 49152-65535
+    help_port_p2p = ("The port to listen on for P2P connections."
+                     " Default to 8468.")
+    parser.add_argument('--port-p2p', type=int, help=help_port_p2p,
+                        default=8468)
 
     help_host = "The host to connect to."
     parser.add_argument('--host', help=help_host, default='192.168.80.130')
+
+    help_localdb = "The local database location."
+    parser.add_argument('--localdb', help=help_localdb,
+                        default='/var/lib/p2pchat/p2pchat.db')
 
     args = parser.parse_args()
     print(args)
@@ -33,8 +40,8 @@ def main():
     args = parse_args()
 
     p2p = P2PConnection(args.port_p2p)
-    
-    db_conn = DBConnection()
+
+    db_conn = DBConnection(args.localdb)
 
     def setup_db_failed(failure):
         print("Setting up the db failed: {}".format(failure.getErrorMessage()))

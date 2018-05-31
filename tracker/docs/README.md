@@ -13,7 +13,7 @@ perform the following steps:
 ## Setting up a MongoDB server
 ### Installation
 ```
-sudo apt install mongodb-server
+sudo apt-get -y install mongodb-server
 ```
 
 ### Configuration
@@ -23,17 +23,20 @@ cd /etc/ssl
 
 Generate certificate, set the FQDN to localhost:
 ```
-openssl req -newkey rsa:2048 -new -x509 -days 365 -nodes -out mongodb-cert.crt -keyout mongodb-cert.key
+sudo openssl req -newkey rsa:2048 -new -x509 -days 365 -nodes -out mongodb-cert.crt -keyout mongodb-cert.key
 ```
 
 Generate pem file:
 ```
-cat mongodb-cert.key mongodb-cert.crt > mongodb.pem
+cat mongodb-cert.key mongodb-cert.crt | sudo tee mongodb.pem
 ```
 
 Edit /etc/mongodb.conf:
 
 ```
+sudoedit /etc/mongodb.conf
+
+Change the following:
 # SSL options
 # Enable SSL on normal ports
 sslOnNormalPorts = true
