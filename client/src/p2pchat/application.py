@@ -8,8 +8,10 @@ from p2pchat.trackerclient import ITrackerNotifier
 from p2pchat.ui_interface import UIInterface
 from tkinter import *
 from twisted.internet import tksupport
+from twisted.internet.error import *
 import queue
 import sys
+import json
 
 
 class Application(ITrackerNotifier):
@@ -34,12 +36,13 @@ class Application(ITrackerNotifier):
 
     def start(self, p2p_bootstrap_address):
         d = self.p2p.connect_p2p(p2p_bootstrap_address)
-        d.addCallback(self.tracker.connect)
         d.addErrback(self.p2p_unavailable)
-        d.addCallback(self.tracker_connected)
+        d.addCallback(lambda x: self.tracker.connect())
         d.addErrback(self.tracker_unavailable)
+        d.addCallback(self.tracker_connected)
         d.addCallback(lambda x: self.get_missed_messages())
         d.addCallback(lambda x: self.request_chatnotifications())
+        d.addErrback(print)
 
     def tracker_connected(self, proto):
         self.tracker_protocol = proto
@@ -81,10 +84,8 @@ class Application(ITrackerNotifier):
 
     def tracker_unavailable(self, err):
         # TODO popup instead of print
-        if type(err) == twisted.internet.error.ConnectionRefusedError:
-            print("The tracker is currently unavailable, try again later.")
-        else:
-            print(err)
+        err.trap(ConnectionRefusedError)
+        print("The tracker is currently unavailable, try again later.")
 
         from twisted.internet import reactor
         reactor.stop()
@@ -92,11 +93,10 @@ class Application(ITrackerNotifier):
 
     def p2p_unavailable(self, err):
         # TODO popup instead of print
-        if type(err) == twisted.internet.error.ConnectionRefusedError:
-            print("The P2P-network is currently unavailable, try again later.")
-        else:
-            print(err)
+        err.trap(ConnectionRefusedError)
+        print("P2P connect failed: {}".format(err.getErrorMessage()),file=sys.stderr)
 
+        # TODO do something else than stopping reactor
         from twisted.internet import reactor
         reactor.stop()
 
@@ -115,50 +115,56 @@ class Application(ITrackerNotifier):
                 # Request message push updates
                 # self.tracker_protocol.receive_notifications(self.gui.chat_uuid_list)
                 self.tracker_protocol.receive_notifications([chatuuid])
-                
+            if not res:
+                return
             chat_info = json.loads(res)
             if not chat_info:
+                # TODO raising an exception is better, will be handled by
+                # errback
                 self.gui.popup_warning("Join failed", "Failed to retrieve chat info")
                 return
             if "name" not in chat_info:
                 TypeError("Chatname is not in chatinfo")
-    
+
             print("Chat name: {}".format(chat_info["name"]))
             # First join, download all messages
             # TODO when closing the application and reopening, old chats should
             # still bee in the chat_uuid_list.
             # Probably we should not use the gui for this information
             self.tracker_protocol.get_messages(chatuuid, 0)
-            d = self.db_conn.insert_new_chat(chatinfo["name"], chatuuid)
+            d = self.db_conn.insert_new_chat(chat_info["name"], chatuuid)
             d.addCallback(finish_join_chat)
+
+        def failed_chat_info(err):
+            self.gui.popup_warning("Join failed", "Failed to retrieve chat info")
+
         # TODO check if this chat is already in the db, if so, just do nothing
         d = self.p2p.get_chat_info(chatuuid)
         d.addCallback(got_chat_info, chatuuid)
-        
+        d.addErrback(failed_chat_info)
+        return d
 
 
-
-    def remove_chat(self, chatuuid):
-        messagehash = self.p2p.send('User left chat.')
-        self.db_conn.deleteChat(chatName, chatuuid)
-        # TODO: Only send left chat message?
-        return
+    # def remove_chat(self, chatuuid):
+        # # TODO convert to JSON
+        # # d, key = self.p2p.send('User left chat.')
+        # d.addCallback(self.db_conn.delete_chat(chatuuid))
+        # # TODO: Only send left chat message?
+        # return
 
     def get_chat_messages(self, chatuuid):
         return self.db_conn.get_chat_messages(chatuuid)
 
     def send_chat_message(self,  chat_uuid, message):
         print("Start sending message: '{}'".format(message))
-        try:
-            message_str = str(message)
-            messagehash = self.p2p.send(message_str)
+        def message_sent(chatuuid, msghash):
             print("Message stored in P2P-network")
-            self.tracker_protocol.send_message(chat_uuid, messagehash)
-        except Exception:
-            # Could not make a string from message input
-            # If you get here, you done something very wrong!!!
-            pass
-        return
+            self.tracker_protocol.send_message(chatuuid, msghash)
+
+        message_str = str(message)
+        d, key = self.p2p.send(message_str)
+        d.addCallback(lambda x: message_sent(chat_uuid, key))
+        return d
 
     def get_chat_list(self):
         return self.db_conn.get_chat_list()
@@ -171,8 +177,8 @@ class Application(ITrackerNotifier):
         print("Created chat on tracker with chatuuid: {}".format(chatuuid))
         chatname = self.chatinfoqueue.get()
         # TODO sanity checks on chatname
-        self.p2p.set_chat_info(chatuuid, chatname)
-        d = self.db_conn.insert_new_chat(chatname, chatuuid)
+        d = self.p2p.set_chat_info(chatuuid, chatname)
+        d.addCallback(lambda q: self.db_conn.insert_new_chat(chatname, chatuuid))
         # use lambda, because refresh_chat_list takes no args
         d.addCallback(lambda x: self.gui.refresh_chat_list())
         d.addErrback(print)

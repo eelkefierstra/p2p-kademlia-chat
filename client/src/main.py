@@ -56,9 +56,9 @@ def main():
 
     app.set_trackerclient(trackerclient)
 
-    app.start(args.host)
 
     from twisted.internet import reactor
+    reactor.callWhenRunning(app.start, args.host)
     reactor.run()
 
 
