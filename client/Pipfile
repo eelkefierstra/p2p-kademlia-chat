@@ -1,0 +1,14 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[dev-packages]
+
+[packages]
+pytest = ">=3.0.6"
+kademlia = ">=0.6"
+Twisted = "*"
+
+[requires]
+python_version = "3.6"

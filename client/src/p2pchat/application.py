@@ -1,92 +1,251 @@
 #!/usr/bin/env python3
 '''
 @author: Eelke
-The GUI for the chat application
+Interface for UI to communicate to core
 '''
+from twisted.internet.defer import inlineCallbacks
+from p2pchat.trackerclient import ITrackerNotifier
+from p2pchat.ui_interface import UIInterface
+from tkinter import *
+from twisted.internet import tksupport
+from twisted.internet.error import *
+import queue
+import sys
+import json
 
-import tkinter as tk
-from twisted.internet import reactor
-from twisted.internet.task import react
-import random
+
+class Application(ITrackerNotifier):
+
+    def __init__(self, p2pObject, dbConnection):
+        self.p2p = p2pObject
+        #self.tracker = trackerclient
+        self.db_conn = dbConnection
+
+        root = Tk()
+        # This fixes the reactor error on closing root window with the 'X' button
+        from twisted.internet import reactor
+        root.protocol("WM_DELETE_WINDOW", reactor.stop)
+        self.gui = UIInterface(root, self)
+        self.gui.master.title('Independed chat')
+        tksupport.install(root)
+
+        self.chatinfoqueue = queue.Queue()
+
+    def set_trackerclient(self, trackerclient):
+        self.tracker = trackerclient
+
+    def start(self, p2p_bootstrap_address):
+        d = self.p2p.connect_p2p(p2p_bootstrap_address)
+        d.addErrback(self.p2p_unavailable)
+        d.addCallback(lambda x: self.tracker.connect())
+        d.addErrback(self.tracker_unavailable)
+        d.addCallback(self.tracker_connected)
+        d.addCallback(lambda x: self.get_missed_messages())
+        d.addCallback(lambda x: self.request_chatnotifications())
+        d.addErrback(print)
+
+    def tracker_connected(self, proto):
+        self.tracker_protocol = proto
+
+    def get_missed_messages(self):
+        d = self.get_chat_list()
+        def got_chat_list(chat_list):
+            if not chat_list:
+                # nothing to do, no chats == no messages
+                raise ValueError("No chats found, so no messages to download.")
+            for chatname, chatuuid in chat_list:
+                # Get messages for each chat
+                def got_latest_msg_ts(last_msg_ts):
+                    self.tracker_protocol.get_messages(chatuuid, last_msg_ts)
+
+                d2 = self.db_conn.get_latest_msg_ts(chatuuid)
+                d2.addCallback(got_latest_msg_ts)
+
+        def got_no_chats(failure):
+            failure.trap(ValueError)
+            print(failure.getErrorMessage(), file=sys.stderr)
+        d.addCallback(got_chat_list)
+        d.addErrback(got_no_chats)
 
 
-class Application(tk.Frame):
-    def __init__(self, master=None):
-        tk.Frame.__init__(self, master)
-        top = self.winfo_toplevel()
-        top.rowconfigure(0, weight=1)
-        top.columnconfigure(0, weight=1)
-        self.rowconfigure(1, weight=1)
-        self.columnconfigure(1, weight=1)
 
-        self.grid(sticky=tk.N+tk.E+tk.S+tk.W)
-        self.createWidgets()
+    def request_chatnotifications(self):
+        # Send notification request for all existing chats
+        def got_chat_list(joined_chats):
+            if not joined_chats:
+                return
 
-    def createWidgets(self):
-        # Build the chat listing
-        self.chatList = tk.Frame(self)
-        self.chatList.grid(row=0, column=0)
+            if len(joined_chats) > 0:
+                chatuuid_list = [chatuuid for chatname, chatuuid in joined_chats]
+                self.tracker_protocol.receive_notifications(chatuuid_list)
+        deferred_chat_list = self.get_chat_list()
+        deferred_chat_list.addCallback(got_chat_list)
 
-        self.chatScroll = tk.Scrollbar(self.chatList, orient=tk.VERTICAL)
-        self.chatScroll.grid(row=0, column=1, sticky=tk.N+tk.S)
-        self.chatListBox = tk.Listbox(self.chatList, yscrollcommand=self.chatScroll.set)
-        self.chatListBox.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
-        self.chatScroll['command'] = self.chatListBox.yview
-        self.chatListButton = tk.Button(self.chatList, text='Select chat', command=self.changeChat)
-        self.chatListButton.grid(row=1, column=0, columnspan=2, sticky=tk.E+tk.W)
 
-        # Build the chat message view
-        self.configureChatmessageList()
+    def tracker_unavailable(self, err):
+        # TODO popup instead of print
+        err.trap(ConnectionRefusedError)
+        print("The tracker is currently unavailable, try again later.")
 
-        self.quitButton = tk.Button(self, text='Quit', command=reactor.stop, bg='#f22')
-        self.quitButton.grid(row=1, column=0, columnspan=2, sticky=tk.N+tk.S+tk.E+tk.W)
+        from twisted.internet import reactor
+        reactor.stop()
 
-    def configureChatmessageList(self):
-        self.chatView = tk.Frame(self)
-        self.chatView.grid(row=0, column=1, sticky=tk.N+tk.E+tk.S+tk.W)
 
-        self.chatMessageCanvas = tk.Canvas(self.chatView, borderwidth=0, background='#fff')
-        self.chatMessageFrame = tk.Frame(self.chatMessageCanvas, background='#fff')
-        self.chatMessageScroll = tk.Scrollbar(self.chatView, orient='vertical', command=self.chatMessageCanvas.yview)
-        self.chatMessageCanvas.configure(yscrollcommand=self.chatMessageScroll.set)
+    def p2p_unavailable(self, err):
+        # TODO popup instead of print
+        err.trap(ConnectionRefusedError)
+        print("P2P connect failed: {}".format(err.getErrorMessage()),file=sys.stderr)
 
-        self.chatMessageScroll.grid(row=0, column=2, sticky=tk.N+tk.S)
-        self.chatMessageCanvas.grid(row=0, column=0, sticky=tk.N+tk.E+tk.S+tk.W, columnspan=2)
-        self.chatMessageCanvas.create_window(4, 4, window=self.chatMessageFrame, anchor=tk.NE, tags='self.chatMessageFrame')
+        # TODO do something else than stopping reactor
+        from twisted.internet import reactor
+        reactor.stop()
 
-        self.chatMessageFrame.bind('<Configure>', self.onFrameConfigure)
-        self.populate()
 
-        self.chatMessageEntry = tk.Entry(self.chatView)
-        self.chatMessageEntry.grid(row=1, column=0, sticky=tk.W+tk.E)
-        self.chatMessageButtonSend = tk.Button(self.chatView, text='Send', command=None)
-        self.chatMessageButtonSend.grid(row=1, column=1)
+    def create_chat(self, chatname):
+        print("Creating chat")
+        self.chatinfoqueue.put(chatname)
+        # Safe group info in the p2p network
+        self.tracker_protocol.create_chat()
+        #def chat_created(self, chatuuid):
+        #    #TODO
 
-    def addChat(self, chatName):
-        self.chatListBox.insert(tk.END, chatName)
+    def join_chat(self, chatuuid):
+        def got_chat_info(res, chatuuid):
+            def finish_join_chat(result):
+                # Request message push updates
+                # self.tracker_protocol.receive_notifications(self.gui.chat_uuid_list)
+                self.tracker_protocol.receive_notifications([chatuuid])
+            if not res:
+                return
+            chat_info = json.loads(res)
+            if not chat_info:
+                # TODO raising an exception is better, will be handled by
+                # errback
+                self.gui.popup_warning("Join failed", "Failed to retrieve chat info")
+                return
+            if "name" not in chat_info:
+                TypeError("Chatname is not in chatinfo")
 
-    def changeChat(self):
-        selected = self.chatListBox.curselection()
-        if selected == ():
-            return
-        chatname = self.chatListBox.get(selected)
-        # TODO: Get chat
-        self.populate()
+            print("Chat name: {}".format(chat_info["name"]))
+            # First join, download all messages
+            # TODO when closing the application and reopening, old chats should
+            # still bee in the chat_uuid_list.
+            # Probably we should not use the gui for this information
+            self.tracker_protocol.get_messages(chatuuid, 0)
+            d = self.db_conn.insert_new_chat(chat_info["name"], chatuuid)
+            d.addCallback(finish_join_chat)
 
-    def populate(self):
-        '''Put in some fake data'''
-        # TODO: get real chat messages to show up
-        # TODO: reset frame to show new chat
-        random.seed()
-        for row in range(random.randint(50, 100)):
-            if row % 2 == 0:
-                sender = 'You'
+        def failed_chat_info(err):
+            self.gui.popup_warning("Join failed", "Failed to retrieve chat info")
+
+        # TODO check if this chat is already in the db, if so, just do nothing
+        d = self.p2p.get_chat_info(chatuuid)
+        d.addCallback(got_chat_info, chatuuid)
+        d.addErrback(failed_chat_info)
+        return d
+
+
+    # def remove_chat(self, chatuuid):
+        # # TODO convert to JSON
+        # # d, key = self.p2p.send('User left chat.')
+        # d.addCallback(self.db_conn.delete_chat(chatuuid))
+        # # TODO: Only send left chat message?
+        # return
+
+    def get_chat_messages(self, chatuuid):
+        return self.db_conn.get_chat_messages(chatuuid)
+
+    def send_chat_message(self,  chat_uuid, message):
+        print("Start sending message: '{}'".format(message))
+        def message_sent(chatuuid, msghash):
+            print("Message stored in P2P-network")
+            self.tracker_protocol.send_message(chatuuid, msghash)
+
+        message_str = str(message)
+        d, key = self.p2p.send(message_str)
+        d.addCallback(lambda x: message_sent(chat_uuid, key))
+        return d
+
+    def get_chat_list(self):
+        return self.db_conn.get_chat_list()
+
+    def on_chat_created(self, chatuuid):
+        """
+        Called when a chat is created
+        """
+        # TODO set p2p info
+        print("Created chat on tracker with chatuuid: {}".format(chatuuid))
+        chatname = self.chatinfoqueue.get()
+        # TODO sanity checks on chatname
+        d = self.p2p.set_chat_info(chatuuid, chatname)
+        d.addCallback(lambda q: self.db_conn.insert_new_chat(chatname, chatuuid))
+        # use lambda, because refresh_chat_list takes no args
+        d.addCallback(lambda x: self.gui.refresh_chat_list())
+        d.addErrback(print)
+
+    def on_message_sent(self, chatuuid, msg_hash, time_sent):
+        """
+        Called when a message is sent to the tracker
+        """
+        print("Received message from tracker: {} {} {}".format(chatuuid, msg_hash, time_sent))
+        d = self.p2p.get(msg_hash)
+        d.addCallback(self.db_conn.insert_message, msg_hash, time_sent, chatuuid)
+        d.addErrback(print)
+        d.addCallback(self.gui.refresh_chat_messages)
+
+    def on_messages_received(self, chatuuid, fromtime, tilltime, messages):
+        """
+        Called when messages are received from the tracker
+        """
+        print("Messages received from tracker: {} {} {} {}".format(chatuuid, fromtime, tilltime, messages))
+
+        def got_latest_msg_ts(msg_ts):
+            if msg_ts != fromtime:
+                # Discard this message update, as the fromtime is later than
+                # the latest update time.
+                raise ValueError(
+                            "fromtime != previous tilltime: fromtime = {}"
+                            " and previous tilltime = {}.".format(fromtime, msg_ts)
+                        )
+            # Set the latest update time to tilltime
+            # TODO add as deferred callback?
+            self.db_conn.set_latest_msg_ts(chatuuid, tilltime)
+
+        def latest_ts_mismatch(failure):
+            failure.trap(ValueError)
+            print(failure.getErrorMessage(),file=sys.stderr)
+
+        d = self.db_conn.get_latest_msg_ts(chatuuid)
+        d.addCallback(got_latest_msg_ts)
+        d.addErrback(latest_ts_mismatch)
+
+        def p2p_download_messages():
+            # TODO CHANGE d to something else!!!
+            d2 = None
+            for message in messages:
+                message_hash = message['hash']
+                message_time = message['time']
+                d2 = self.p2p.get(message_hash)
+                d2.addCallback(self.db_conn.insert_message, message_hash, message_time, chatuuid)
+                d2.addErrback(print)
+
+            # Refresh GUI only when new messages were downloaded
+            if (d2 == None):
+                return
             else:
-                sender = 'Me'
-            tk.Label(self.chatMessageFrame, text=sender).grid(row=row, column=0)
-            t = "This is message number %s" % row
-            tk.Label(self.chatMessageFrame, text=t).grid(row=row, column=1)
+                d2.addCallback(self.gui.refresh_chat_messages)
 
-    def onFrameConfigure(self, event):
-        '''Reset the scroll region to encompass the inner frame'''
-        self.chatMessageCanvas.configure(scrollregion=self.chatMessageCanvas.bbox("all"))
+        # TODO check if this callback is still fired when latest_ts_mismatch is
+        # called
+        d.addCallback(lambda x: p2p_download_messages())
+        d.addErrback(print)
+
+    def on_message_received(self, chatuuid, msg_hash, time_sent):
+        """
+        Called when a message is pushed by the tracker
+        """
+        print("Received message from tracker: {} {} {}".format(chatuuid, msg_hash, time_sent))
+        d = self.p2p.get(msg_hash)
+        d.addCallback(self.db_conn.insert_message, msg_hash, time_sent, chatuuid)
+        d.addErrback(print)
+        d.addCallback(self.gui.refresh_chat_messages)
