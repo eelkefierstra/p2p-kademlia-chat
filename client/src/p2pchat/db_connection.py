@@ -9,8 +9,9 @@ from twisted.internet import defer
 
 
 class DBConnection():
-    def __init__(self):
-        self.dbpool = adbapi.ConnectionPool('sqlite3', 'storage.db', check_same_thread=False)
+    def __init__(self, dblocation):
+        self.dbpool = adbapi.ConnectionPool('sqlite3', dblocation,
+                                            check_same_thread=False)
 
     def setup_db(self):
         d = self.init_tables()
@@ -41,7 +42,7 @@ class DBConnection():
                        timeSend real,
                        chatuuid text
                    );""")
-        dl = defer.DeferredList([d_chats,d_messages,d_p2p_message_info])
+        dl = defer.DeferredList([d_chats, d_messages, d_p2p_message_info])
         return dl
 
     # Returns list of all connected chats
@@ -84,7 +85,6 @@ class DBConnection():
                         SET last_msg_update = ?
                         WHERE chatuuid = ?;
                         """, [ts, chatuuid])
-
 
     def get_message(self, messageHash):
         return self.dbpool.runQuery("SELECT messageContent FROM messages WHERE messageHash=?", [messageHash])
