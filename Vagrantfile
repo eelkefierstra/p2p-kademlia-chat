@@ -11,9 +11,10 @@ Vagrant.configure("2") do |config|
             v.customize ["modifyvm", :id, "--name", "p2pchat_tracker"]
         end
         tracker.vm.provision "shell", inline: "sudo apt-get update"
-        tracker.vm.provision "shell", inline: "sudo apt-get install -y virtualbox-guest-dkms virtualbox-guest-utils python python3 mongodb-server rsync tmux python-pip python3-pip"
+        tracker.vm.provision "shell", inline: "sudo apt-get install -y virtualbox-guest-dkms virtualbox-guest-utils python python3 mongodb-server rsync tmux python-pip python3-pip libssl-dev"
         tracker.vm.provision "shell", inline: "sudo systemctl enable mongodb"
         tracker.vm.provision "shell", inline: "pip install pipenv"
+        tracker.vm.provision "shell", inline: "pip3 install -r /vagrant/tracker/requirements.txt"
 
         $gencert = <<SCRIPT
         #!/bin/bash
@@ -39,8 +40,9 @@ SCRIPT
         end
         # Install xfce and virtualbox additions
         client1.vm.provision "shell", inline: "sudo apt-get update"
-        client1.vm.provision "shell", inline: "sudo apt-get install -y xfce4 virtualbox-guest-dkms virtualbox-guest-utils virtualbox-guest-x11 python python3 rsync python-pip python3-pip python3-tk"
+        client1.vm.provision "shell", inline: "sudo apt-get install -y xfce4 virtualbox-guest-dkms virtualbox-guest-utils virtualbox-guest-x11 python python3 rsync python-pip python3-pip python3-tk libssl-dev"
         client1.vm.provision "shell", inline: "pip install pipenv"
+        client1.vm.provision "shell", inline: "pip3 install -r /vagrant/client/requirements.txt"
         # Permit anyone to start the GUI
     end
 
@@ -56,8 +58,9 @@ SCRIPT
         end
         # Install xfce and virtualbox additions
         client2.vm.provision "shell", inline: "sudo apt-get update"
-        client2.vm.provision "shell", inline: "sudo apt-get install -y xfce4 virtualbox-guest-dkms virtualbox-guest-utils virtualbox-guest-x11 python python3 rsync python-pip python3-pip python3-tk"
+        client2.vm.provision "shell", inline: "sudo apt-get install -y xfce4 virtualbox-guest-dkms virtualbox-guest-utils virtualbox-guest-x11 python python3 rsync python-pip python3-pip python3-tk libssl-dev"
         client2.vm.provision "shell", inline: "pip install pipenv"
+        client2.vm.provision "shell", inline: "pip3 install -r /vagrant/client/requirements.txt"
         # Permit anyone to start the GUI
     end
   
