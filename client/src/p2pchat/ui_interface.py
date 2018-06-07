@@ -174,8 +174,8 @@ class UIInterface(tk.Frame):
         for result_row in chat_messages:
             message = result_row[0]
             # TODO: Tekst links uit laten lijnen en lange berichten over meerdere regels
-            chat_message_label = tk.Label(self.chat_messages_frame, text=message, background='#fff')
-            chat_message_label.grid(row=row_count, column=0)
+            chat_message_label = tk.Label(self.chat_messages_frame, text=message, background='#fff', wraplength=300, justify=tk.LEFT)
+            chat_message_label.grid(row=row_count, column=0, sticky=tk.W)
             self.chat_list_labels.append(chat_message_label)
             row_count = row_count + 1
 
