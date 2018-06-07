@@ -116,11 +116,12 @@ class UIInterface(tk.Frame):
         # self.application.get_chat_messages(self.chat_uuid_list[0]).addCallback(self.refresh_chat_messages)
 
         self.chat_message_entry = tk.Entry(self.chat_view)
+        self.chat_message_entry.bind('<Return>', self.send_chat_message)
         self.chat_message_entry.grid(row=1, column=0, sticky=tk.W+tk.E)
         self.chat_message_button_send = tk.Button(self.chat_view, text='Send', command=self.send_chat_message)
         self.chat_message_button_send.grid(row=1, column=1)
 
-    def send_chat_message(self):
+    def send_chat_message(self, event = None):
         chat_message = self.chat_message_entry.get()
         d = self.application.send_chat_message(self.current_chatuuid, chat_message)
         d.addCallback(lambda x: self.chat_message_entry.delete(0, len(chat_message)))
