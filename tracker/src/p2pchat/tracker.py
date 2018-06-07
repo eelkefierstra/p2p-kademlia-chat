@@ -4,6 +4,7 @@
 The tracker server
 """
 
+import sys
 import json
 import uuid
 import datetime
@@ -133,7 +134,15 @@ class TrackerProtocol(NetstringReceiver):
     #    #self.factory.protocols.remove(self)
 
     def stringReceived(self, string):
-        json_obj = json.loads(string)
+        try:
+            json_obj = json.loads(string.decode('utf-8'))
+        except UnicodeError:
+            # discard input which is not
+            print("Can't decode to utf-8, discarding input.", file=sys.stderr)
+            return
+        except json.JSONDecodeError:
+            print("Can't decode JSON, discarding input.", file=sys.stderr)
+            return
         # TODO keyerror
         action = json_obj["action"]
         if action == "createchat":

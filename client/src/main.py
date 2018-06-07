@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os.path
 import argparse
 from p2pchat.trackerclient import TrackerClient
 from p2pchat.p2p_connection import P2PConnection
@@ -27,8 +28,17 @@ This is the client for the p2p kademlia chat protocol
     parser.add_argument('--host', help=help_host, default='192.168.80.130')
 
     help_localdb = "The local database location."
+    # TODO create script which will create this directory and add chown -R
+    # vagrant:vagrant
+
+    user_home = os.path.expanduser('~')
+    db_loc = os.path.join(user_home, '.p2pchat', 'p2pchat.db')
+    app_data_dir = os.path.dirname(os.path.abspath(db_loc))
+    if not os.path.isdir(app_data_dir):
+        os.makedirs(app_data_dir)
     parser.add_argument('--localdb', help=help_localdb,
-                        default='/var/lib/p2pchat/p2pchat.db')
+                        default=db_loc)
+
 
     args = parser.parse_args()
     print(args)
