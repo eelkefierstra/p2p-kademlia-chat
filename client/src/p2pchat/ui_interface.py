@@ -116,11 +116,12 @@ class UIInterface(tk.Frame):
         # self.application.get_chat_messages(self.chat_uuid_list[0]).addCallback(self.refresh_chat_messages)
 
         self.chat_message_entry = tk.Entry(self.chat_view)
+        self.chat_message_entry.bind('<Return>', self.send_chat_message)
         self.chat_message_entry.grid(row=1, column=0, sticky=tk.W+tk.E)
         self.chat_message_button_send = tk.Button(self.chat_view, text='Send', command=self.send_chat_message)
         self.chat_message_button_send.grid(row=1, column=1)
 
-    def send_chat_message(self):
+    def send_chat_message(self, event = None):
         chat_message = self.chat_message_entry.get()
         d = self.application.send_chat_message(self.current_chatuuid, chat_message)
         d.addCallback(lambda x: self.chat_message_entry.delete(0, len(chat_message)))
@@ -174,8 +175,8 @@ class UIInterface(tk.Frame):
         for result_row in chat_messages:
             message = result_row[0]
             # TODO: Tekst links uit laten lijnen en lange berichten over meerdere regels
-            chat_message_label = tk.Label(self.chat_messages_frame, text=message, background='#fff')
-            chat_message_label.grid(row=row_count, column=0)
+            chat_message_label = tk.Label(self.chat_messages_frame, text=message, background='#fff', wraplength=300, justify=tk.LEFT)
+            chat_message_label.grid(row=row_count, column=0, sticky=tk.W)
             self.chat_list_labels.append(chat_message_label)
             row_count = row_count + 1
 
