@@ -93,8 +93,16 @@ class TrackerClientProtocol(NetstringReceiver):
         self.factory.notifier.on_messages_received(chatuuid, fromtime, tilltime, messages)
 
     def stringReceived(self, string):
-        print("Data received from tracker")
-        dataJSON = json.loads(string)
+        try:
+            dataJSON = json.loads(string.decode('utf-8'))
+        except UnicodeError:
+            # discard input which is not
+            print("Can't decode to utf-8, discarding input.", file=sys.stderr)
+            return
+        except json.JSONDecodeError:
+            print("Can't decode JSON, discarding input.", file=sys.stderr)
+            return
+
         action = dataJSON["action"]
         if action == "createdchat":
             # Created new chat

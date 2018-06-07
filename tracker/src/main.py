@@ -9,7 +9,7 @@ from p2pchat.database import P2PChatDB
 
 def check_file_exists(parser, filepath):
     if not os.path.exists(filepath):
-        parser.error("The file {} does not exist!".format(arg))
+        parser.error("The file {} does not exist!".format(filepath))
     return filepath
 
 
